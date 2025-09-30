@@ -4,20 +4,20 @@
 
 A arquitetura do jogo é baseada no padrão de Game Loop, separando a lógica de jogo (update) da renderização (paintComponent). O jogo é desenvolvido em Java, utilizando a biblioteca Swing/AWT para gráficos.
 
-🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto
 
-Para rodar o Orca Defense localmente, siga os passos abaixo no seu terminal:
+Para rodar o jogo localmente, siga os passos abaixo no seu terminal:
 
-Pré-requisitos
+### Pré-requisitos
 
-Certifique-se de ter o JDK (Java Development Kit) instalado na sua máquina (versão mínima recomendada: JDK 17).
+Certifique-se de ter o **JDK (Java Development Kit)** instalado na sua máquina (versão mínima recomendada: **JDK 17**).
 
-1. Clonar o Repositório
+### 1. Clonar o Repositório
 
 Abra o seu terminal (Bash/CMD/PowerShell) e execute os seguintes comandos para baixar o código e entrar no diretório:
-Bash
 
-git clone [https://github.com/DanielMP18/TubaroesVsOrcas.git](https://github.com/DanielMP18/TubaroesVsOrcas.git)
+
+git clone https://github.com/DanielMP18/TubaroesVsOrcas.git
 cd TubaroesVsOrcas
 
 2. Compilação do Código
@@ -35,6 +35,9 @@ Bash
 
 # Inicia o Game Loop
 java -cp bin main.Main
+
+```bash
+---
 
 ## Diagrama de Classes UML
 
