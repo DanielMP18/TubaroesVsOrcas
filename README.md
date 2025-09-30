@@ -1,38 +1,38 @@
-# 🦈 Tubaroes vs Orcas:
+# 🦈 Tubarões vs Orcas - Tower Defense 2D
+
+Um jogo **Tower Defense 2D** temático onde tubarões enfrentam orcas em batalhas aquáticas.
+
 ---
 
-## 🏗️ Estrutura e Arquitetura do Código
+## 🚀 Como Executar o Projeto
 
-A arquitetura do jogo é baseada no padrão de **Game Loop**, separando a lógica de jogo (`update`) da renderização (`paintComponent`). O projeto utiliza Java e a biblioteca Swing/AWT para gráficos.
+### 1. Pré-requisitos
+- [Java JDK 17+](https://www.oracle.com/java/technologies/javase-jdk17-downloads.html) instalado  
+- Um editor ou IDE (recomendado: [IntelliJ IDEA](https://www.jetbrains.com/idea/)) ou apenas terminal  
 
-```markdown
-### 1. Clonar o Repositório
-
-Abra o seu terminal (Bash/CMD/PowerShell) e execute os seguintes comandos para baixar o código e entrar no diretório:
-
+### 2. Clonar o repositório
 ```bash
-git clone [https://github.com/DanielMP18/TubaroesVsOrcas.git](https://github.com/DanielMP18/TubaroesVsOrcas.git)
-cd TubaroesVsOrcas
+git clone https://github.com/seu-usuario/seu-repositorio.git
+cd seu-repositorio
+```
+3. Compilar o código
 
-2. Compilação do Código
+No terminal, dentro da pasta onde estão os arquivos .java, rode:
+```bash
+javac Main.java GamePanel.java TileManager.java Inimigo.java
+```
+4. Executar o jogo
 
-Use o compilador javac para criar a pasta bin e colocar todos os arquivos de bytecode (.class) nela:
-Bash
+Agora execute o programa principal:
+```bash
+java Main
+```
 
-# Compila todos os arquivos .java dentro de src/ e subpastas
-javac -d bin src/**/*.java
 
-3. Execução do Jogo
 
-Finalmente, use o comando java para iniciar o Game Loop, informando que a classe principal (main.Main) está disponível no classpath (-cp) da pasta bin:
-Bash
+---
 
-# Inicia o Game Loop
-java -cp bin main.Main
-
-### Diagrama de Classes UML
-
-O diagrama abaixo ilustra a relação entre as principais classes que compõem a estrutura central do jogo.
+## Diagrama de Classes UML
 
 ```mermaid
 classDiagram
