@@ -1,23 +1,17 @@
-## Tubaroes vs Orcas
+# 🦈 Tubaroes vs Orcas:
+---
 
-🏗️ Estrutura e Arquitetura do Código
+## 🏗️ Estrutura e Arquitetura do Código
 
-A arquitetura do jogo é baseada no padrão de Game Loop, separando a lógica de jogo (update) da renderização (paintComponent). O jogo é desenvolvido em Java, utilizando a biblioteca Swing/AWT para gráficos.
+A arquitetura do jogo é baseada no padrão de **Game Loop**, separando a lógica de jogo (`update`) da renderização (`paintComponent`). O projeto utiliza Java e a biblioteca Swing/AWT para gráficos.
 
-## 🚀 Como Executar o Projeto
-
-Para rodar o jogo localmente, siga os passos abaixo no seu terminal:
-
-### Pré-requisitos
-
-Certifique-se de ter o **JDK (Java Development Kit)** instalado na sua máquina (versão mínima recomendada: **JDK 17**).
-
+```markdown
 ### 1. Clonar o Repositório
 
 Abra o seu terminal (Bash/CMD/PowerShell) e execute os seguintes comandos para baixar o código e entrar no diretório:
 
-
-git clone https://github.com/DanielMP18/TubaroesVsOrcas.git
+```bash
+git clone [https://github.com/DanielMP18/TubaroesVsOrcas.git](https://github.com/DanielMP18/TubaroesVsOrcas.git)
 cd TubaroesVsOrcas
 
 2. Compilação do Código
@@ -36,10 +30,9 @@ Bash
 # Inicia o Game Loop
 java -cp bin main.Main
 
-```bash
----
+### Diagrama de Classes UML
 
-## Diagrama de Classes UML
+O diagrama abaixo ilustra a relação entre as principais classes que compõem a estrutura central do jogo.
 
 ```mermaid
 classDiagram
