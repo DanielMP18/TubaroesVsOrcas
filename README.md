@@ -2,33 +2,39 @@
 
 🏗️ Estrutura e Arquitetura do Código
 
-A arquitetura do jogo é baseada no padrão de Game Loop, separando a lógica de jogo (update) da renderização (paintComponent).
-Essa separação é a melhor prática para jogos, garantindo que a lógica rode em uma taxa consistente de FPS e o desenho possa rodar na maior velocidade possível.
+A arquitetura do jogo é baseada no padrão de Game Loop, separando a lógica de jogo (update) da renderização (paintComponent). O jogo é desenvolvido em Java, utilizando a biblioteca Swing/AWT para gráficos.
 
 🚀 Como Executar o Projeto
 
-Para rodar o jogo localmente, siga os passos abaixo:
+Para rodar o Orca Defense localmente, siga os passos abaixo no seu terminal:
 
 Pré-requisitos
 
-Certifique-se de ter o JDK (Java Development Kit) instalado na sua máquina (versão mínima: (Ex: JDK 17)).
+Certifique-se de ter o JDK (Java Development Kit) instalado na sua máquina (versão mínima recomendada: JDK 17).
 
-Instalação e Execução
+1. Clonar o Repositório
 
-    Clone o Repositório:
-    Bash
-git clone https://github.com/DanielMP18/TubaroesVsOrcas.git
+Abra o seu terminal (Bash/CMD/PowerShell) e execute os seguintes comandos para baixar o código e entrar no diretório:
+Bash
+
+git clone [https://github.com/DanielMP18/TubaroesVsOrcas.git](https://github.com/DanielMP18/TubaroesVsOrcas.git)
 cd TubaroesVsOrcas
 
-Compile o Código:
+2. Compilação do Código
 
-    (Se estiver usando uma IDE como IntelliJ/Eclipse, use a função de build.)
+Use o compilador javac para criar a pasta bin e colocar todos os arquivos de bytecode (.class) nela:
+Bash
 
-    (Se estiver usando a linha de comando, use o compilador Java:)
-    Bash
+# Compila todos os arquivos .java dentro de src/ e subpastas
+javac -d bin src/**/*.java
 
-    javac -d bin src/**/*.java
+3. Execução do Jogo
 
+Finalmente, use o comando java para iniciar o Game Loop, informando que a classe principal (main.Main) está disponível no classpath (-cp) da pasta bin:
+Bash
+
+# Inicia o Game Loop
+java -cp bin main.Main
 
 ## Diagrama de Classes UML
 
