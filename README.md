@@ -28,6 +28,12 @@ Agora execute o programa principal:
 java Main
 ```
 
+🎨 Justificativa de Design
+
+O objetivo principal é desenvolver um jogo do subgênero Tower Defense (TD) utilizando a linguagem Java para aplicar e consolidar conceitos fundamentais de programação orientada a objetos (POO) e estruturas de desenvolvimento de jogos 2D. O foco está na criação de um Game Loop funcional, um sistema de movimentação de inimigos com pathing e a implementação de mecânicas centrais do gênero (ondas, defesa de base e colocação estratégica de torres).
+
+O projeto Tubarões vs Orcas – Tower Defense 2D foi desenvolvido seguindo princípios de organização modular buscando facilidade na manutenção.
+Cada classe representa um componente independente dentro da arquitetura do jogo, contribuindo para um sistema coeso e expansível.
 
 
 ---
