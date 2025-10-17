@@ -9,55 +9,72 @@ public class Inimigo {
 
     private float x, y;
     private int vida;
+    private int vidaMaxima;
     private float velocidade;
-    private boolean ativo = true; 
+    private boolean ativo = true;
+    private int recompensa;
 
-    
     private List<Point> caminho;
     private int pontoAlvoIndex = 0;
 
     public Inimigo(float x, float y, List<Point> caminho) {
         this.x = x;
         this.y = y;
-        this.vida = 100; 
-        this.velocidade = 1.5f; 
+        this.vidaMaxima = 100;
+        this.vida = vidaMaxima;
+        this.velocidade = 1.5f;
         this.caminho = caminho;
+        this.recompensa = 15;
     }
 
-   
     public void update() {
         if (!ativo || pontoAlvoIndex >= caminho.size()) {
-            return; 
+            desativar();
+            return;
         }
 
         Point alvo = caminho.get(pontoAlvoIndex);
-
         float alvoX = alvo.x;
         float alvoY = alvo.y;
-
-
         float angulo = (float) Math.atan2(alvoY - y, alvoX - x);
 
-        
         x += velocidade * Math.cos(angulo);
         y += velocidade * Math.sin(angulo);
 
-        
         if (Math.sqrt(Math.pow(alvoX - x, 2) + Math.pow(alvoY - y, 2)) < velocidade) {
-            pontoAlvoIndex++; 
+            pontoAlvoIndex++;
         }
     }
 
-    
     public void draw(Graphics2D g2) {
-        g2.setColor(Color.RED); 
-        g2.fillRect((int)x, (int)y, 32, 32);
+        g2.setColor(Color.RED);
+        g2.fillRect((int) x, (int) y, 32, 32);
+
+        if (vida < vidaMaxima) {
+            g2.setColor(Color.GRAY);
+            g2.fillRect((int) x, (int) y - 8, 32, 5);
+
+            g2.setColor(Color.GREEN);
+            float larguraVida = (float) vida / vidaMaxima * 32;
+            g2.fillRect((int) x, (int) y - 8, (int) larguraVida, 5);
+        }
+    }
+
+    public void levarDano(int dano) {
+        this.vida -= dano;
+        if (this.vida <= 0) {
+            desativar();
+        }
+    }
+
+    public int getRecompensa() {
+        return recompensa;
     }
 
     public boolean chegouNaBase() {
         return pontoAlvoIndex >= caminho.size();
     }
-    
+
     public void desativar() {
         this.ativo = false;
     }
@@ -65,7 +82,7 @@ public class Inimigo {
     public boolean isAtivo() {
         return ativo;
     }
-    
+
     public float getX() {
         return x;
     }
@@ -73,9 +90,4 @@ public class Inimigo {
     public float getY() {
         return y;
     }
-
-    public int getVida() {
-        return vida;
-    }
-
 }
