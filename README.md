@@ -42,60 +42,111 @@ Cada classe representa um componente independente dentro da arquitetura do jogo,
 
 ```mermaid
 classDiagram
+    direction LR
+
     class Main {
-        +static void main(String[] args)
+        +main(String[] args)
     }
 
     class GamePanel {
-        -Thread gameThread
-        -TileManager tileManager
-        -List~Inimigo~ inimigos
-        -List~Torre~ torres
-        -int vidaBase
-        -int estadoDoJogo
-        +void startGameThread()
-        +void run()
-        +void update()
-        +void paintComponent(Graphics g)
+        -tileManager: TileManager
+        -inimigos: List~Inimigo~
+        -torres: List~Torre~
+        -projeteis: List~Projetil~
+        -vidaBase: int
+        -dinheiro: int
+        -estadoDoJogo: int
+        +GamePanel()
+        +startGameThread()
+        +run()
+        +update()
+        +paintComponent(Graphics g)
+        +construirTorre(int, int)
+        +spawnInimigo()
     }
 
     class TileManager {
-        -int[][] mapGrid
-        -List~Point~ caminho
-        +List~Point~ getCaminho()
-        +void draw(Graphics2D g2)
+        -mapGrid: int[][]
+        -caminho: List~Point~
+        +TileManager(int, int, int)
+        +getCaminho(): List~Point~
+        +isTileValidoParaConstrucao(int, int)
+        +draw(Graphics2D g2)
     }
 
     class Inimigo {
-        -float x
-        -float y
-        -int vida
-        -float velocidade
-        -List~Point~ caminho
-        -int pontoAlvoIndex
-        +void update()
-        +void draw(Graphics2D g2)
-        +boolean chegouNaBase()
-        +void receberDano(int dano)
+        -x: float
+        -y: float
+        -vida: int
+        -velocidade: float
+        -ativo: boolean
+        -caminho: List~Point~
+        +Inimigo(float, float, List~Point~)
+        +update()
+        +levarDano(int)
+        +draw(Graphics2D g2)
+        +isAtivo(): boolean
+        +chegouNaBase(): boolean
+    }
+
+    class Projetil {
+        -x: float
+        -y: float
+        -dano: int
+        -alvo: Inimigo
+        -ativo: boolean
+        +Projetil(float, float, float, int, Inimigo, Color)
+        +update()
+        +draw(Graphics2D g2)
+        +isAtivo(): boolean
     }
 
     class Torre {
-        -int x
-        -int y
-        -int alcance
-        -int dano
-        -long cadenciaDeTiro
-        -Inimigo alvoAtual
-        +void update(List~Inimigo~ inimigos)
-        -void encontrarAlvo(List~Inimigo~ inimigos)
-        -void atirar()
-        +void draw(Graphics2D g2)
+        <<abstract>>
+        #x: int
+        #y: int
+        #custo: int
+        #alcance: int
+        #alvo: Inimigo
+        #inimigos: List~Inimigo~
+        #projeteis: List~Projetil~
+        +Torre(int, int, int, List~Inimigo~, List~Projetil~)
+        +update()
+        #encontrarAlvo()
+        {abstract} +atirar()
+        {abstract} +draw(Graphics2D g2)
     }
 
+    class TorreCanhao {
+        +TorreCanhao(int, int, int, List~Inimigo~, List~Projetil~)
+        +atirar()
+        +draw(Graphics2D g2)
+    }
+
+    class TorreLaser {
+        +TorreLaser(int, int, int, List~Inimigo~, List~Projetil~)
+        +atirar()
+        +draw(Graphics2D g2)
+    }
+
+    ' --- Relacionamentos ---
+
     Main ..> GamePanel : cria
-    GamePanel "1" o-- "1" TileManager : contém
-    GamePanel "1" o-- "*" Inimigo : contém
-    GamePanel "1" o-- "*" Torre : contém
-    GamePanel ..> Inimigo : gerencia
-    GamePanel ..> Torre : gerencia
-    Torre ..> Inimigo : rastreia (alvo)
+
+    GamePanel "1" o-- "1" TileManager : gerencia
+    GamePanel "1" o-- "*" Inimigo : gerencia
+    GamePanel "1" o-- "*" Torre : gerencia
+    GamePanel "1" o-- "*" Projetil : gerencia
+
+    Torre <|-- TorreCanhao : "é um"
+    Torre <|-- TorreLaser : "é um"
+
+    Torre ..> Inimigo : "1" mira "1"
+    Projetil ..> Inimigo : "1" persegue "1"
+    
+    ' Subclasses de Torre criam projéteis
+    TorreCanhao ..> Projetil : cria
+    TorreLaser ..> Projetil : cria
+    
+    ' GamePanel usa o caminho do TileManager para criar Inimigos
+    GamePanel ..> TileManager : (usa getCaminho())
