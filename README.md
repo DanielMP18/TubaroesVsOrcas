@@ -41,112 +41,121 @@ Cada classe representa um componente independente dentro da arquitetura do jogo,
 ## Diagrama de Classes UML
 
 ```mermaid
-classDiagram
-    direction LR
+    classDiagram
+    %% Entidades principais do jogo
+    class GamePanel {
+        -Thread gameThread
+        -TileManager tileManager
+        -List~Inimigo~ inimigos
+        -List~Torre~ torres
+        -List~Projetil~ projeteis
+        -int vidaBase
+        -int ondaAtual
+        -int dinheiro
+        -int estadoDoJogo
+        -int maxOndas
+        -int[] inimigosPorOnda
+        -startGameThread()
+        +update()
+        +paintComponent(Graphics g)
+        -spawnInimigo()
+        -construirTorre(int col, int row)
+        -venderTorre(int col, int row)
+    }
+
+    class TileManager {
+        -int tamanhoDoTitulo
+        -int maxColunas
+        -int maxLinhas
+        -int[][] mapGrid
+        -List~Point~ caminho
+        +draw(Graphics2D g2)
+        +isTileValidoParaConstrucao(int col, int row)
+        +getCaminho() List~Point~
+    }
+
+    class Inimigo {
+        -float x, y
+        -int vida
+        -int vidaMaxima
+        -float velocidade
+        -boolean ativo
+        -int recompensa
+        -List~Point~ caminho
+        -int pontoAlvoIndex
+        +update()
+        +draw(Graphics2D g2)
+        +levarDano(int dano)
+        +chegouNaBase() boolean
+        +desativar()
+        +isAtivo() boolean
+    }
+
+    class Projetil {
+        -float x, y
+        -float velocidade
+        -int dano
+        -Inimigo alvo
+        -boolean ativo
+        -Color cor
+        +update()
+        +draw(Graphics2D g2)
+        +desativar()
+        +isAtivo() boolean
+    }
+
+    %% Hierarquia de Torres
+    class Torre {
+        <<abstract>>
+        #int x, y
+        #int col, row
+        #int tamanho
+        #int custo
+        #int alcance
+        #long ultimoDisparo
+        #long cadenciaDeTiro
+        #Inimigo alvo
+        #List~Inimigo~ inimigos
+        #List~Projetil~ projeteis
+        +Torre(int col, int row, int tamanho, List~Inimigo~ inimigos, List~Projetil~ projeteis)
+        #encontrarAlvo()
+        +update()
+        +draw(Graphics2D g2)*
+        #atirar()*
+        +getCusto() int
+    }
+
+    class TorreCanhao {
+        +static final int CUSTO
+        +TorreCanhao(int col, int row, int tamanho, List~Inimigo~ inimigos, List~Projetil~ projeteis)
+        +draw(Graphics2D g2)
+        #atirar()
+    }
+
+    class TorreLaser {
+        +static final int CUSTO
+        +TorreLaser(int col, int row, int tamanho, List~Inimigo~ inimigos, List~Projetil~ projeteis)
+        +draw(Graphics2D g2)
+        #atirar()
+    }
 
     class Main {
         +main(String[] args)
     }
 
-    class GamePanel {
-        -tileManager: TileManager
-        -inimigos: List~Inimigo~
-        -torres: List~Torre~
-        -projeteis: List~Projetil~
-        -vidaBase: int
-        -dinheiro: int
-        -estadoDoJogo: int
-        +GamePanel()
-        +startGameThread()
-        +run()
-        +update()
-        +paintComponent(Graphics g)
-        +construirTorre(int, int)
-        +spawnInimigo()
-    }
-
-    class TileManager {
-        -mapGrid: int[][]
-        -caminho: List~Point~
-        +TileManager(int, int, int)
-        +getCaminho(): List~Point~
-        +isTileValidoParaConstrucao(int, int)
-        +draw(Graphics2D g2)
-    }
-
-    class Inimigo {
-        -x: float
-        -y: float
-        -vida: int
-        -velocidade: float
-        -ativo: boolean
-        -caminho: List~Point~
-        +Inimigo(float, float, List~Point~)
-        +update()
-        +levarDano(int)
-        +draw(Graphics2D g2)
-        +isAtivo(): boolean
-        +chegouNaBase(): boolean
-    }
-
-    class Projetil {
-        -x: float
-        -y: float
-        -dano: int
-        -alvo: Inimigo
-        -ativo: boolean
-        +Projetil(float, float, float, int, Inimigo, Color)
-        +update()
-        +draw(Graphics2D g2)
-        +isAtivo(): boolean
-    }
-
-    class Torre {
-        <<abstract>>
-        #x: int
-        #y: int
-        #custo: int
-        #alcance: int
-        #alvo: Inimigo
-        #inimigos: List~Inimigo~
-        #projeteis: List~Projetil~
-        +Torre(int, int, int, List~Inimigo~, List~Projetil~)
-        +update()
-        #encontrarAlvo()
-        {abstract} +atirar()
-        {abstract} +draw(Graphics2D g2)
-    }
-
-    class TorreCanhao {
-        +TorreCanhao(int, int, int, List~Inimigo~, List~Projetil~)
-        +atirar()
-        +draw(Graphics2D g2)
-    }
-
-    class TorreLaser {
-        +TorreLaser(int, int, int, List~Inimigo~, List~Projetil~)
-        +atirar()
-        +draw(Graphics2D g2)
-    }
-
-    ' --- Relacionamentos ---
-
-    Main ..> GamePanel : cria
-
-    GamePanel "1" o-- "1" TileManager : gerencia
-    GamePanel "1" o-- "*" Inimigo : gerencia
-    GamePanel "1" o-- "*" Torre : gerencia
-    GamePanel "1" o-- "*" Projetil : gerencia
-
-    Torre <|-- TorreCanhao : "é um"
-    Torre <|-- TorreLaser : "é um"
-
-    Torre ..> Inimigo : "1" mira "1"
-    Projetil ..> Inimigo : "1" persegue "1"
+    %% Relações entre classes
+    GamePanel --> TileManager
+    GamePanel --> Inimigo
+    GamePanel --> Torre
+    GamePanel --> Projetil
     
-    ' Subclasses de Torre criam projéteis
-    TorreCanhao ..> Projetil : cria
-    TorreLaser ..> Projetil : cria
+    Torre <|-- TorreCanhao
+    Torre <|-- TorreLaser
     
-    ' GamePanel usa o caminho do TileManager para criar Inimigos
-    GamePanel ..> TileManager : (usa getCaminho())
+    Torre --> Inimigo
+    Torre --> Projetil
+    
+    Projetil --> Inimigo
+    
+    Inimigo --> Point
+    TileManager --> Point
