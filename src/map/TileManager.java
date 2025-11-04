@@ -13,8 +13,8 @@ public class TileManager {
     private final int maxLinhas;
 
     
-    private int[][] mapGrid;
-    private List<Point> caminho;
+    private final int[][] mapGrid;
+    private final List<Point> caminho;
 
     public TileManager(int tamanhoDoTitulo, int maxColunas, int maxLinhas) {
         this.tamanhoDoTitulo = tamanhoDoTitulo;
@@ -36,26 +36,24 @@ public class TileManager {
             }
         }
 
-        // 2. Define os segmentos do caminho
-        // Seus valores de maxColunas=25 e maxLinhas=15 são perfeitos para este mapa.
-        
-        desenharSegmento(0, 5, 3, 5);   // Começa em (0,5) e vai até (3,5)
-        desenharSegmento(3, 5, 3, 3);   // Curva 1: de (3,5) vai até (3,3)
-        desenharSegmento(3, 3, 7, 3);   // Curva 2: de (3,3) vai até (7,3)
-        desenharSegmento(7, 3, 7, 7);   // Curva 3: de (7,3) vai até (7,7)
-        desenharSegmento(7, 7, 12, 7);  // Curva 4: de (7,7) vai até (12,7)
-        desenharSegmento(12, 7, 12, 5); // Curva 5: de (12,7) vai até (12,5)
-        desenharSegmento(12, 5, 15, 5); // Curva 6: de (12,5) vai até (15,5)
-        desenharSegmento(15, 5, 15, 10); // Curva 7: de (15,5) vai até (15,10)
-        desenharSegmento(15, 10, 5, 10); // Curva 8: de (15,10) vai até (5,10)
-        desenharSegmento(5, 10, 5, 13); // Curva 9: de (5,10) vai até (5,13)
-        desenharSegmento(5, 13, 18, 13); // Curva 10: de (5,13) vai até (18,13)
-        desenharSegmento(18, 13, 18, 10); // Curva 11: de (18,13) vai até (18,10)
-        desenharSegmento(18, 10, 24, 10); // Curva 12: de (18,10) vai até (24,10) (fim)
+        desenharSegmento(0, 4, 6, 4);    // Termina em: (6, 4)
+        desenharSegmento(6, 4, 6, 1);    // Começa em: (6, 4). Termina em: (6, 1)
+        desenharSegmento(6, 1, 10, 1);   // Começa em: (6, 1). Termina em: (10, 1)
+        desenharSegmento(10, 1, 10, 6);  // Começa em: (10, 1). Termina em: (10, 7)
+        desenharSegmento(10, 6, 15, 6);  // Começa em: (10, 7). Termina em: (15, 7)
+        desenharSegmento(15, 6, 15, 4);  // Começa em: (15, 7). Termina em: (15, 4)
+        desenharSegmento(15, 4, 18, 4);  // Começa em: (15, 4). Termina em: (18, 4)
+        desenharSegmento(18, 4, 18, 9);  // Começa em: (18, 4). Termina em: (18, 9)
+        desenharSegmento(18, 9, 8, 9);   // Começa em: (18, 9). Termina em: (8, 9)
+        desenharSegmento(8, 9, 8, 12);   // Começa em: (8, 9). Termina em: (8, 12)
+        desenharSegmento(8, 12, 21, 12); // Começa em: (8, 12). Termina em: (21, 12)
+        desenharSegmento(21, 12, 21, 9); // Começa em: (21, 12). Termina em: (21, 9)
+        desenharSegmento(21, 9, 27, 9);  // Começa em: (21, 9). Termina em: (27, 9)
+
 
         // 3. Adiciona o ponto final (o destino)
         // (Usei 24, 10 como ponto final, ajuste se necessário)
-        caminho.add(new Point(24 * tamanhoDoTitulo, 10 * tamanhoDoTitulo));
+        caminho.add(new Point(27 * tamanhoDoTitulo, 9 * tamanhoDoTitulo));
     }
 
     /**
@@ -96,7 +94,7 @@ public class TileManager {
                 int tileY = row * tamanhoDoTitulo;
 
                 if (mapGrid[col][row] == 1) {
-                    g2.setColor(new Color(100, 100, 100)); // Cor do caminho
+                    g2.setColor(new Color(88, 153, 255)); // Cor do caminho
                 } else {
                     g2.setColor(new Color(0, 100, 200)); // Cor de água para o fundo
                 }
