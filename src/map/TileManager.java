@@ -51,8 +51,7 @@ public class TileManager {
         desenharSegmento(21, 9, 27, 9);  // Começa em: (21, 9). Termina em: (27, 9)
 
 
-        // 3. Adiciona o ponto final (o destino)
-        // (Usei 24, 10 como ponto final, ajuste se necessário)
+        // ponto final(destino)
         caminho.add(new Point(27 * tamanhoDoTitulo, 9 * tamanhoDoTitulo));
     }
 
