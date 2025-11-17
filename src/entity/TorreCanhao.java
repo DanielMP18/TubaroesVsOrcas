@@ -29,4 +29,6 @@ public class TorreCanhao extends Torre {
         g2.setColor(Color.GRAY);
         g2.fillRect(x - 5, y - 5, 10, 10);
     }
+
+
 }

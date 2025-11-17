@@ -1,10 +1,7 @@
 package game;
 
-import entity.Inimigo;
-import entity.Projetil;
-import entity.Torre;
-import entity.TorreCanhao;
-import entity.TorreLaser;
+import entity.*;
+
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -49,7 +46,7 @@ public class GamePanel extends JPanel implements Runnable {
     private long ultimoSpawnTime = System.nanoTime();
     private long spawnCooldown = 1_500_000_000L; // 1.5 segundos
 
-    // <-- MUDANÇA: Definição das Ondas
+    // MUDANÇA: Definição das Ondas
     private final int maxOndas = 3; // O jogo terá 3 ondas
     private int[] inimigosPorOnda = { 10, 15, 25 }; // Onda 1=10, Onda 2=15, Onda 3=25
     private int inimigosSpawndosNaOnda = 0;
@@ -220,24 +217,67 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
     }
-    
-    // <-- MUDANÇA: Lógica de spawn refeita para ondas
+
+
     private void spawnInimigo() {
-        // 1. Checa se a onda já foi totalmente "spawnada"
-        // (Lembre-se: ondaAtual é 1, 2, 3... mas o array é 0, 1, 2)
+        //Checa se a onda já foi totalmente "spawnada"
         if (inimigosSpawndosNaOnda >= inimigosPorOnda[ondaAtual - 1]) {
-            return; // Todos os inimigos da onda já foram criados. Não faz mais nada.
+            return;
         }
 
-        // 2. Se ainda não, checa o cooldown para o próximo inimigo
+        //checa o cooldown para o próximo inimigo
         long agora = System.nanoTime();
         if (agora - ultimoSpawnTime > spawnCooldown) {
-            Point pontoInicial = tileManager.getCaminho().get(0);
-            Inimigo novoInimigo = new Inimigo(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-            inimigos.add(novoInimigo);
-            
-            ultimoSpawnTime = agora;
-            inimigosSpawndosNaOnda++; // <-- MUDANÇA: Incrementa o contador da onda
+
+            Point pontoInicial = tileManager.getCaminho().getFirst();
+            Inimigo novoInimigo; // Variável para guardar o inimigo criado
+
+            switch (ondaAtual) {
+                case 1:
+                    // Onda 1: Apenas inimigos básicos
+                    novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    break;
+
+                case 2:
+                    // Onda 2: Mistura de básicos e rápidos
+                    // A cada 3 inimigos (%), cria 1 rápido, senão, cria 2 básicos
+                    if (inimigosSpawndosNaOnda % 3 == 0) {
+                        novoInimigo = new InimigoRapido(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    } else {
+                        novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    }
+                    break;
+
+                case 3:
+                    // Onda 3: Mistura de todos
+                    // A cada 5 inimigos (%), cria 1 tanque
+                    // A cada 4 inimigos (%), cria 1 rápido
+                    // Senão, cria básico
+                    if (inimigosSpawndosNaOnda % 5 == 0) {
+                        novoInimigo = new InimigoTank(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    } else if (inimigosSpawndosNaOnda % 4 == 0) {
+                        novoInimigo = new InimigoRapido(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    } else {
+                        novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    }
+                    break;
+
+
+                default:
+                    if (inimigosSpawndosNaOnda % 5 == 0) {
+                        novoInimigo = new InimigoTank(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    } else {
+                        novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
+                    }
+                    break;
+            }
+
+            // Adiciona o inimigo criado (se algum foi criado) na lista
+            if (novoInimigo != null) {
+                inimigos.add(novoInimigo);
+                ultimoSpawnTime = agora;
+                inimigosSpawndosNaOnda++;
+            }
         }
     }
 

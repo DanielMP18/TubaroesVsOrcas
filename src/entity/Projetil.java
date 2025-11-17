@@ -25,10 +25,10 @@ public class Projetil {
         if (!ativo || alvo == null || !alvo.isAtivo()) {
             desativar();
             return;
-        }
 
-        float alvoX = alvo.getX() + 16;
-        float alvoY = alvo.getY() + 16;
+        }
+        float alvoX = alvo.getX() + ((float) alvo.getLargura() / 2);
+        float alvoY = alvo.getY() + ((float) alvo.getAltura() / 2);
 
         float angulo = (float) Math.atan2(alvoY - y, alvoX - x);
 
