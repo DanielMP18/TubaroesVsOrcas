@@ -1,7 +1,7 @@
 package game;
 
 import entity.*;
-
+import game.Elemento;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -13,7 +13,7 @@ import map.TileManager;
 
 public class GamePanel extends JPanel implements Runnable {
 
-    // ... (Configurações de tela permanecem iguais)
+    // --- Configurações de Tela ---
     final int tamanhoOriginalTile = 16;
     final int escala = 3;
     public final int tamanhoDoTile = tamanhoOriginalTile * escala; // 48
@@ -24,41 +24,46 @@ public class GamePanel extends JPanel implements Runnable {
 
     private Thread gameThread;
 
-    // GERENCIADORES E ENTIDADES
+    // --- Gerenciadores e Entidades ---
     private TileManager tileManager;
     private List<Inimigo> inimigos;
     private List<Torre> torres;
     private List<Projetil> projeteis;
 
-    // ESTADO DO JOGO
+    // --- Estado do Jogo ---
     private int vidaBase = 20;
     private int ondaAtual = 1;
     private int dinheiro = 250; 
-
-    // <-- MUDANÇA: Novos estados de jogo
-    public static final int ESTADO_PREPARACAO = 0; // Esperando a onda começar
-    public static final int ESTADO_JOGANDO = 1;      // Onda em progresso
-    public static final int ESTADO_FIM_DE_JOGO = 2;  // Perdeu
-    public static final int ESTADO_VITORIA = 3;    // Ganhou
+    
+    public static final int ESTADO_PREPARACAO = 0;
+    public static final int ESTADO_JOGANDO = 1;   
+    public static final int ESTADO_FIM_DE_JOGO = 2; 
+    public static final int ESTADO_VITORIA = 3;   
     private int estadoDoJogo;
 
-    // SPAWN DE INIMIGOS
+    // --- Spawn de Inimigos e Ondas ---
     private long ultimoSpawnTime = System.nanoTime();
-    private long spawnCooldown = 1_500_000_000L; // 1.5 segundos
-
-    // MUDANÇA: Definição das Ondas
-    private final int maxOndas = 3; // O jogo terá 3 ondas
-    private int[] inimigosPorOnda = { 10, 15, 25 }; // Onda 1=10, Onda 2=15, Onda 3=25
+    private long spawnCooldown = 1_500_000_000L; 
+    private final int maxOndas = 3; 
+    private int[] inimigosPorOnda = { 10, 15, 25 }; 
     private int inimigosSpawndosNaOnda = 0;
-    private long tempoEntreOndas = 5_000_000_000L; // 10 segundos
+    private long tempoEntreOndas = 5_000_000_000L; 
     private long proximaOndaTimer = 0;
 
-    // ... (Controles do Jogador e HUD permanecem iguais)
+    // --- Controles e HUD ---
     private Point mousePos = new Point();
-    private int tipoTorreSelecionada = 1;
+    private int tipoTorreSelecionada = 1; // Para construir
     private final int alturaHUD = 80;
+    
     private final Rectangle boxTorreCanhao = new Rectangle(20, alturaTela - alturaHUD + 10, 140, 60);
     private final Rectangle boxTorreLaser = new Rectangle(170, alturaTela - alturaHUD + 10, 140, 60);
+    private final Rectangle boxTorreEspada = new Rectangle(320, alturaTela - alturaHUD + 10, 140, 60);
+
+    // --- Sistema de Upgrade ---
+    private Torre torreSelecionada = null; 
+    private final Rectangle boxUpgradeOpcao1 = new Rectangle(20, alturaTela - alturaHUD + 10, 140, 60);
+    private final Rectangle boxUpgradeOpcao2 = new Rectangle(170, alturaTela - alturaHUD + 10, 140, 60);
+    private final Rectangle boxUpgradeOpcao3 = new Rectangle(320, alturaTela - alturaHUD + 10, 140, 60);
 
 
     public GamePanel() {
@@ -72,13 +77,12 @@ public class GamePanel extends JPanel implements Runnable {
         this.torres = new ArrayList<>();
         this.projeteis = new ArrayList<>();
 
-        this.estadoDoJogo = ESTADO_PREPARACAO; // <-- MUDANÇA: Começa em modo de preparação
-        this.proximaOndaTimer = System.nanoTime() + tempoEntreOndas; // <-- MUDANÇA: Prepara o timer para a Onda 1
+        this.estadoDoJogo = ESTADO_PREPARACAO;
+        this.proximaOndaTimer = System.nanoTime() + tempoEntreOndas; 
         
         adicionarControles();
     }
 
-    // ... (Métodos adicionarControles, startGameThread, run permanecem os mesmos) ...
     private void adicionarControles() {
         addMouseMotionListener(new MouseAdapter() {
             @Override
@@ -90,28 +94,65 @@ public class GamePanel extends JPanel implements Runnable {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                // <-- MUDANÇA: Só pode clicar se não tiver perdido ou ganhado
                 if (estadoDoJogo == ESTADO_FIM_DE_JOGO || estadoDoJogo == ESTADO_VITORIA) return;
 
+                // --- CLIQUE NO MAPA ---
                 if (e.getY() < alturaTela - alturaHUD) { 
                     int col = e.getX() / tamanhoDoTile;
                     int row = e.getY() / tamanhoDoTile;
 
+                    Torre torreClicada = getTorreNoLocal(col, row); 
+
                     if (SwingUtilities.isLeftMouseButton(e)) {
-                        construirTorre(col, row);
+                        if (torreClicada != null) {
+                            // Clicou em uma torre existente: Seleciona/Desseleciona
+                            torreSelecionada = (torreSelecionada == torreClicada) ? null : torreClicada;
+                        } else {
+                            // Clicou em um lugar vazio: Constrói
+                            construirTorre(col, row);
+                            torreSelecionada = null; 
+                        }
                     } else if (SwingUtilities.isRightMouseButton(e)) {
-                        venderTorre(col, row);
+                        if (torreClicada != null) {
+                            // Vende a torre
+                            venderTorre(col, row); 
+                            torreSelecionada = null; 
+                        }
                     }
-                } else { 
-                    if (boxTorreCanhao.contains(e.getPoint())) {
-                        tipoTorreSelecionada = 1;
-                    } else if (boxTorreLaser.contains(e.getPoint())) {
-                        tipoTorreSelecionada = 2;
+                } 
+                // --- CLIQUE NA HUD ---
+                else {
+                    if (torreSelecionada == null) {
+                        // MODO CONSTRUÇÃO
+                        if (boxTorreCanhao.contains(e.getPoint())) tipoTorreSelecionada = 1;
+                        else if (boxTorreLaser.contains(e.getPoint())) tipoTorreSelecionada = 2;
+                        else if (boxTorreEspada.contains(e.getPoint())) tipoTorreSelecionada = 3;
+                    } else {
+                        // MODO UPGRADE
+                        if (!torreSelecionada.isEspecializada()) {
+                            int custoUpg = torreSelecionada.getCustoUpgrade();
+                            
+                            if (boxUpgradeOpcao1.contains(e.getPoint()) && dinheiro >= custoUpg) {
+                                dinheiro -= custoUpg;
+                                torreSelecionada.especializar(Elemento.FOGO); // <- Lógica de Efeito
+                                torreSelecionada = null;
+                            }
+                            else if (boxUpgradeOpcao2.contains(e.getPoint()) && dinheiro >= custoUpg) {
+                                dinheiro -= custoUpg;
+                                torreSelecionada.especializar(Elemento.AGUA); // <- Lógica de Efeito
+                                torreSelecionada = null; 
+                            }
+                            else if (boxUpgradeOpcao3.contains(e.getPoint()) && dinheiro >= custoUpg) {
+                                dinheiro -= custoUpg;
+                                torreSelecionada.especializar(Elemento.ALGA); // <- Lógica de Efeito
+                                torreSelecionada = null; 
+                            }
+                        }
                     }
                 }
-            }
-        });
-    }
+            } 
+        }); 
+    } 
 
     public void startGameThread() {
         gameThread = new Thread(this);
@@ -138,30 +179,26 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-
-    // ATUALIZA A LÓGICA DO JOGO
-    // <-- MUDANÇA: Lógica de update totalmente refeita para suportar ondas
     public void update() {
-        // Se o jogo acabou (venceu ou perdeu), não faz mais nada
         if (estadoDoJogo == ESTADO_FIM_DE_JOGO || estadoDoJogo == ESTADO_VITORIA) {
             return;
         }
 
-        // Se está em preparação, apenas checa o timer
+        // Atualiza torres mesmo na preparação
         if (estadoDoJogo == ESTADO_PREPARACAO) {
-            if (System.nanoTime() > proximaOndaTimer) {
-                estadoDoJogo = ESTADO_JOGANDO; // Começa a onda!
-                inimigosSpawndosNaOnda = 0; // Reseta o contador de spawn
+            for (Torre torre : torres) {
+                torre.update(); 
             }
-            return; // Não atualiza torres, inimigos, etc.
+            if (System.nanoTime() > proximaOndaTimer) {
+                estadoDoJogo = ESTADO_JOGANDO;
+                inimigosSpawndosNaOnda = 0;
+            }
+            return; 
         }
 
-        // Se chegou aqui, o estado é ESTADO_JOGANDO
-        
-        // 1. Tenta "spawnar" inimigos
+        // ESTADO_JOGANDO
         spawnInimigo();
 
-        // 2. Atualiza Inimigos
         Iterator<Inimigo> inimigoIt = inimigos.iterator();
         while (inimigoIt.hasNext()) {
             Inimigo inimigo = inimigoIt.next();
@@ -170,12 +207,9 @@ public class GamePanel extends JPanel implements Runnable {
             if (inimigo.chegouNaBase()) {
                 vidaBase--;
                 inimigoIt.remove(); 
-                System.out.println("Inimigo alcançou a base! Vida restante: " + vidaBase);
-
                 if (vidaBase <= 0) {
-                    estadoDoJogo = ESTADO_FIM_DE_JOGO; // PERDEU
-                    System.out.println("FIM DE JOGO!");
-                    return; // Sai imediatamente do update
+                    estadoDoJogo = ESTADO_FIM_DE_JOGO;
+                    return; 
                 }
             } else if (!inimigo.isAtivo()) {
                 dinheiro += inimigo.getRecompensa();
@@ -183,96 +217,58 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        // 3. Atualiza Torres
         for (Torre torre : torres) {
             torre.update();
         }
 
-        // 4. Atualiza Projéteis
         Iterator<Projetil> projetilIt = projeteis.iterator();
         while (projetilIt.hasNext()) {
             Projetil p = projetilIt.next();
-            if (p.isAtivo()) {
-                p.update();
-            } else {
-                projetilIt.remove();
-            }
+            if (p.isAtivo()) p.update();
+            else projetilIt.remove();
         }
 
-        // 5. Verifica se a onda terminou
-        // Condição: Todos os inimigos da onda foram spawnados E não há mais inimigos na tela
         if (inimigos.isEmpty() && inimigosSpawndosNaOnda >= inimigosPorOnda[ondaAtual - 1]) {
-            // ONDA VENCIDA!
-            
-            // Verifica se foi a ÚLTIMA onda
             if (ondaAtual >= maxOndas) {
                 estadoDoJogo = ESTADO_VITORIA;
-                System.out.println("VOCÊ VENCEU!");
             } else {
-                // Prepara para a próxima onda
                 estadoDoJogo = ESTADO_PREPARACAO;
                 ondaAtual++;
                 proximaOndaTimer = System.nanoTime() + tempoEntreOndas;
-                dinheiro += 100; // Bônus por vencer a onda
+                dinheiro += 100;
             }
         }
     }
 
-
     private void spawnInimigo() {
-        //Checa se a onda já foi totalmente "spawnada"
-        if (inimigosSpawndosNaOnda >= inimigosPorOnda[ondaAtual - 1]) {
-            return;
-        }
-
-        //checa o cooldown para o próximo inimigo
+        if (inimigosSpawndosNaOnda >= inimigosPorOnda[ondaAtual - 1]) return;
+        
         long agora = System.nanoTime();
         if (agora - ultimoSpawnTime > spawnCooldown) {
-
             Point pontoInicial = tileManager.getCaminho().getFirst();
-            Inimigo novoInimigo; // Variável para guardar o inimigo criado
-
+            Inimigo novoInimigo = null; 
             switch (ondaAtual) {
                 case 1:
-                    // Onda 1: Apenas inimigos básicos
                     novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
                     break;
-
                 case 2:
-                    // Onda 2: Mistura de básicos e rápidos
-                    // A cada 3 inimigos (%), cria 1 rápido, senão, cria 2 básicos
-                    if (inimigosSpawndosNaOnda % 3 == 0) {
+                    if (inimigosSpawndosNaOnda % 3 == 0) 
                         novoInimigo = new InimigoRapido(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    } else {
+                    else 
                         novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    }
                     break;
-
                 case 3:
-                    // Onda 3: Mistura de todos
-                    // A cada 5 inimigos (%), cria 1 tanque
-                    // A cada 4 inimigos (%), cria 1 rápido
-                    // Senão, cria básico
-                    if (inimigosSpawndosNaOnda % 5 == 0) {
+                    if (inimigosSpawndosNaOnda % 5 == 0) 
                         novoInimigo = new InimigoTank(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    } else if (inimigosSpawndosNaOnda % 4 == 0) {
+                    else if (inimigosSpawndosNaOnda % 4 == 0) 
                         novoInimigo = new InimigoRapido(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    } else {
+                    else 
                         novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    }
                     break;
-
-
                 default:
-                    if (inimigosSpawndosNaOnda % 5 == 0) {
-                        novoInimigo = new InimigoTank(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    } else {
-                        novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
-                    }
+                    novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
                     break;
             }
-
-            // Adiciona o inimigo criado (se algum foi criado) na lista
             if (novoInimigo != null) {
                 inimigos.add(novoInimigo);
                 ultimoSpawnTime = agora;
@@ -281,15 +277,15 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    // ... (Métodos construirTorre, venderTorre, existeTorreNoLocal permanecem os mesmos) ...
     private void construirTorre(int col, int row) {
         if (tileManager.isTileValidoParaConstrucao(col, row) && !existeTorreNoLocal(col, row)) {
             Torre novaTorre = null;
-            if (tipoTorreSelecionada == 1) {
+            if (tipoTorreSelecionada == 1) 
                 novaTorre = new TorreCanhao(col, row, tamanhoDoTile, inimigos, projeteis);
-            } else if (tipoTorreSelecionada == 2) {
+            else if (tipoTorreSelecionada == 2) 
                 novaTorre = new TorreLaser(col, row, tamanhoDoTile, inimigos, projeteis);
-            }
+            else if (tipoTorreSelecionada == 3) 
+                novaTorre = new TorreEspada(col, row, tamanhoDoTile, inimigos, projeteis);
 
             if (novaTorre != null && dinheiro >= novaTorre.getCusto()) {
                 torres.add(novaTorre);
@@ -303,165 +299,180 @@ public class GamePanel extends JPanel implements Runnable {
         while (torreIt.hasNext()) {
             Torre t = torreIt.next();
             if (t.getCol() == col && t.getRow() == row) {
-                dinheiro += t.getCusto() / 2;
+                dinheiro += t.getCusto() / 2; 
                 torreIt.remove();
                 break;
             }
         }
     }
 
-    private boolean existeTorreNoLocal(int col, int row) {
+    private Torre getTorreNoLocal(int col, int row) {
         for (Torre torre : torres) {
             if (torre.getCol() == col && torre.getRow() == row) {
-                return true;
+                return torre;
             }
         }
-        return false;
+        return null; 
     }
 
+    private boolean existeTorreNoLocal(int col, int row) {
+        return getTorreNoLocal(col, row) != null;
+    }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
-        // Desenha o mapa
         tileManager.draw(g2);
+        for (Torre torre : torres) torre.draw(g2);
+        for (Projetil projetil : projeteis) projetil.draw(g2);
+        for (Inimigo inimigo : inimigos) inimigo.draw(g2);
+        
+        drawHUD(g2);
 
-        // Desenha as torres
-        for (Torre torre : torres) {
-            torre.draw(g2);
-        }
-
-        // Desenha os projéteis
-        for (Projetil projetil : projeteis) {
-            projetil.draw(g2);
-        }
-
-        // Desenha os inimigos
-        for (Inimigo inimigo : inimigos) {
-            inimigo.draw(g2);
+        // Lógica da HUD Dinâmica
+        if (torreSelecionada != null) {
+            drawUpgradeHUD(g2);
+            drawTorreRange(g2, torreSelecionada);
+        } else if (estadoDoJogo != ESTADO_FIM_DE_JOGO && estadoDoJogo != ESTADO_VITORIA) {
+            drawTorreSelectionHUD(g2);
+            drawPlacementGhost(g2);
         }
         
-        // Desenha a HUD (agora desenha o timer também)
-        drawHUD(g2);
-        drawPlacementGhost(g2);
-        drawTorreSelectionHUD(g2);
-
-        // <-- MUDANÇA: Verifica o estado de FIM DE JOGO ou VITÓRIA
-        if (estadoDoJogo == ESTADO_FIM_DE_JOGO) {
-            drawTelaFimDeJogo(g2);
-        } else if (estadoDoJogo == ESTADO_VITORIA) { // <-- MUDANÇA
-            drawTelaVitoria(g2); // <-- MUDANÇA
-        }
+        if (estadoDoJogo == ESTADO_FIM_DE_JOGO) drawTelaFimDeJogo(g2);
+        else if (estadoDoJogo == ESTADO_VITORIA) drawTelaVitoria(g2);
 
         g2.dispose();
     }
     
-    // DESENHA A HUD
-    // <-- MUDANÇA: drawHUD agora desenha o timer de preparação
     private void drawHUD(Graphics2D g2) {
         g2.setFont(new Font("Arial", Font.BOLD, 24));
         g2.setColor(Color.WHITE);
-        
-        String textoVida = "Vida: " + vidaBase;
-        g2.drawString(textoVida, 20, 30);
-        
-        String textoDinheiro = "Dinheiro: $" + dinheiro;
-        g2.drawString(textoDinheiro, 20, 60);
+        g2.drawString("Vida: " + vidaBase, 20, 30);
+        g2.drawString("Dinheiro: $" + dinheiro, 20, 60);
+        g2.drawString("Onda: " + ondaAtual + " / " + maxOndas, larguraTela - 150, 30);
 
-        String textoOnda = "Onda: " + ondaAtual + " / " + maxOndas; // <-- MUDANÇA
-        g2.drawString(textoOnda, larguraTela - 150, 30);
-
-        // <-- MUDANÇA: Adiciona o timer de preparação
         if (estadoDoJogo == ESTADO_PREPARACAO) {
             g2.setFont(new Font("Arial", Font.BOLD, 30));
             g2.setColor(Color.YELLOW);
-            // Calcula o tempo restante em segundos
             long tempoRestante = (proximaOndaTimer - System.nanoTime()) / 1_000_000_000L;
             String textoTimer = "Próxima onda em: " + (tempoRestante + 1) + "s";
-
-            // Centraliza o timer na tela
             int textoLargura = g2.getFontMetrics().stringWidth(textoTimer);
             int x = (larguraTela - textoLargura) / 2;
             g2.drawString(textoTimer, x, alturaTela / 2);
         }
     }
     
-    // ... (drawTorreSelectionHUD e drawPlacementGhost permanecem os mesmos) ...
     private void drawTorreSelectionHUD(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 180));
         g2.fillRect(0, alturaTela - alturaHUD, larguraTela, alturaHUD);
-
         g2.setFont(new Font("Arial", Font.BOLD, 14));
-        if (tipoTorreSelecionada == 1) {
-            g2.setColor(Color.YELLOW);
-        } else {
-            g2.setColor(Color.WHITE);
-        }
+
+        g2.setColor(tipoTorreSelecionada == 1 ? Color.YELLOW : Color.WHITE);
         g2.draw(boxTorreCanhao);
         g2.drawString("Canhão", boxTorreCanhao.x + 10, boxTorreCanhao.y + 20);
         g2.drawString("Custo: $" + TorreCanhao.CUSTO, boxTorreCanhao.x + 10, boxTorreCanhao.y + 45);
 
-        if (tipoTorreSelecionada == 2) {
-            g2.setColor(Color.YELLOW);
-        } else {
-            g2.setColor(Color.WHITE);
-        }
+        g2.setColor(tipoTorreSelecionada == 2 ? Color.YELLOW : Color.WHITE);
         g2.draw(boxTorreLaser);
         g2.drawString("Laser", boxTorreLaser.x + 10, boxTorreLaser.y + 20);
         g2.drawString("Custo: $" + TorreLaser.CUSTO, boxTorreLaser.x + 10, boxTorreLaser.y + 45);
+    
+        g2.setColor(tipoTorreSelecionada == 3 ? Color.YELLOW : Color.WHITE);
+        g2.draw(boxTorreEspada);
+        g2.drawString("Espada", boxTorreEspada.x + 10, boxTorreEspada.y + 20);
+        g2.drawString("Custo: $" + TorreEspada.CUSTO, boxTorreEspada.x + 10, boxTorreEspada.y + 45);
     }
 
     private void drawPlacementGhost(Graphics2D g2) {
-        // <-- MUDANÇA: Não desenha o "fantasma" se o jogo acabou
-        if (estadoDoJogo == ESTADO_FIM_DE_JOGO || estadoDoJogo == ESTADO_VITORIA) return;
-
         int col = mousePos.x / tamanhoDoTile;
         int row = mousePos.y / tamanhoDoTile;
 
         if (mousePos.y < alturaTela - alturaHUD) {
-            if (tileManager.isTileValidoParaConstrucao(col, row) && !existeTorreNoLocal(col, row)) {
-                g2.setColor(new Color(0, 255, 0, 100));
-            } else {
-                g2.setColor(new Color(255, 0, 0, 100));
-            }
+            Color cor = (tileManager.isTileValidoParaConstrucao(col, row) && !existeTorreNoLocal(col, row))
+                ? new Color(0, 255, 0, 100)  // Verde
+                : new Color(255, 0, 0, 100); // Vermelho
+            g2.setColor(cor);
             g2.fillRect(col * tamanhoDoTile, row * tamanhoDoTile, tamanhoDoTile, tamanhoDoTile);
         }
     }
 
+    private void drawTorreRange(Graphics2D g2, Torre t) {
+        g2.setColor(new Color(255, 255, 255, 100)); // Branco
+        int xCentro = t.getX();
+        int yCentro = t.getY();
+        int alcance = t.getAlcance();
+        int diametro = alcance * 2;
+        g2.drawOval(xCentro - alcance, yCentro - alcance, diametro, diametro);
+    }
 
-    // ... (drawTelaFimDeJogo permanece o mesmo) ...
+    // --- HUD DE UPGRADE COM NOVOS TEXTOS DE EFEITO ---
+    private void drawUpgradeHUD(Graphics2D g2) {
+        g2.setColor(new Color(0, 0, 0, 180));
+        g2.fillRect(0, alturaTela - alturaHUD, larguraTela, alturaHUD);
+        g2.setFont(new Font("Arial", Font.BOLD, 14));
+
+        if (!torreSelecionada.isEspecializada()) {
+            int custoUpg = torreSelecionada.getCustoUpgrade();
+            Color corCusto;
+            
+            // Botão 1: FOGO (Queimadura)
+            corCusto = (dinheiro >= custoUpg) ? Color.WHITE : Color.GRAY;
+            g2.setColor(corCusto); 
+            g2.draw(boxUpgradeOpcao1);
+            g2.setColor(Color.RED);
+            g2.drawString("FOGO (Queimadura)", boxUpgradeOpcao1.x + 10, boxUpgradeOpcao1.y + 20);
+            g2.setColor(corCusto);
+            g2.drawString("Custo: $" + custoUpg, boxUpgradeOpcao1.x + 10, boxUpgradeOpcao1.y + 45);
+
+            // Botão 2: ÁGUA (Molhado)
+            corCusto = (dinheiro >= custoUpg) ? Color.WHITE : Color.GRAY;
+            g2.setColor(corCusto);
+            g2.draw(boxUpgradeOpcao2);
+            g2.setColor(Color.CYAN);
+            g2.drawString("ÁGUA (Molhado)", boxUpgradeOpcao2.x + 10, boxUpgradeOpcao2.y + 20);
+            g2.setColor(corCusto);
+            g2.drawString("Custo: $" + custoUpg, boxUpgradeOpcao2.x + 10, boxUpgradeOpcao2.y + 45);
+
+            // Botão 3: ALGA (Lentidão)
+            corCusto = (dinheiro >= custoUpg) ? Color.WHITE : Color.GRAY;
+            g2.setColor(corCusto);
+            g2.draw(boxUpgradeOpcao3);
+            g2.setColor(Color.GREEN);
+            g2.drawString("ALGA (Lentidão)", boxUpgradeOpcao3.x + 10, boxUpgradeOpcao3.y + 20);
+            g2.setColor(corCusto);
+            g2.drawString("Custo: $" + custoUpg, boxUpgradeOpcao3.x + 10, boxUpgradeOpcao3.y + 45);
+
+        } else {
+            // Torre Nível 2 ou maior
+            g2.setColor(Color.WHITE);
+            g2.drawString("Torre Nível " + torreSelecionada.getNivel(), 20, alturaTela - alturaHUD + 30);
+            g2.drawString("Elemento: " + torreSelecionada.getElemento(), 20, alturaTela - alturaHUD + 50);
+        }
+    }
+
     private void drawTelaFimDeJogo(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150)); 
         g2.fillRect(0, 0, larguraTela, alturaTela);
-        
         g2.setFont(new Font("Arial", Font.BOLD, 80));
         g2.setColor(Color.RED);
-        
         String texto = "FIM DE JOGO";
-        
         int textoLargura = g2.getFontMetrics().stringWidth(texto);
         int x = (larguraTela - textoLargura) / 2;
         int y = alturaTela / 2;
-        
         g2.drawString(texto, x, y);
     }
 
-    // <-- MUDANÇA: Novo método para desenhar a tela de Vitória
     private void drawTelaVitoria(Graphics2D g2) {
         g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, larguraTela, alturaTela);
-        
         g2.setFont(new Font("Arial", Font.BOLD, 80));
-        g2.setColor(Color.GREEN); // Vitória é verde!
-        
+        g2.setColor(Color.GREEN);
         String texto = "VOCÊ VENCEU!";
-        
         int textoLargura = g2.getFontMetrics().stringWidth(texto);
         int x = (larguraTela - textoLargura) / 2;
         int y = alturaTela / 2;
-        
         g2.drawString(texto, x, y);
     }
 }
