@@ -55,11 +55,7 @@ public class TileManager {
         caminho.add(new Point(27 * tamanhoDoTitulo, 9 * tamanhoDoTitulo));
     }
 
-    /**
-     * NOVO MÉTODO AUXILIAR
-     * Desenha um segmento de caminho reto (horizontal ou vertical) no mapGrid
-     * e adiciona o ponto inicial (c1, r1) à lista de waypoints.
-     */
+    
     private void desenharSegmento(int c1, int r1, int c2, int r2) {
         // Adiciona o ponto inicial do segmento (a curva)
         // Verifica os limites antes de adicionar
@@ -84,8 +80,7 @@ public class TileManager {
     }
 
 
-    // --- SEUS MÉTODOS ORIGINAIS (sem mudança) ---
-
+    
     public void draw(Graphics2D g2) {
         for (int col = 0; col < maxColunas; col++) {
             for (int row = 0; row < maxLinhas; row++) {
