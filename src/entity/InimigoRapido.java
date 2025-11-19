@@ -9,7 +9,7 @@ import java.util.List;
 public class InimigoRapido extends Inimigo {
 
     public InimigoRapido(float x, float y, List<Point> caminho) {
-        super(x, y, caminho, 50, 3.0f, 5, 24, 24);
+        super(x, y, caminho, 100, 3.0f, 5, 24, 24);
         this.elemento = Elemento.ALGA; // <--- Elemento
     }
 

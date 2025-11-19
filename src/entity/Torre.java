@@ -76,7 +76,7 @@ public abstract class Torre {
             return;
         }
 
-        this.elemento = novoElemento; !
+        this.elemento = novoElemento;
         this.nivel = 2; 
 
         // Bônus geral por evoluir

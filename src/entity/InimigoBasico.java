@@ -9,7 +9,7 @@ import java.util.List;
 public class InimigoBasico extends Inimigo {
 
     public InimigoBasico(float x, float y, List<Point> caminho) {
-        super(x, y, caminho, 100, 1.5f, 15, 32, 32);
+        super(x, y, caminho, 200, 1.5f, 10, 32, 32);
         this.elemento = Elemento.FOGO; // <--- Elemento
     }
 

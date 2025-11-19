@@ -9,7 +9,7 @@ import java.util.List;
 public class InimigoTank extends Inimigo {
 
     public InimigoTank(float x, float y, List<Point> caminho) {
-        super(x, y, caminho, 500, 0.8f, 50, 40, 40);
+        super(x, y, caminho, 1000, 0.8f, 25, 40, 40);
         this.elemento = Elemento.AGUA; // <--- Elemento
     }
 
