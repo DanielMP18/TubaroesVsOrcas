@@ -6,7 +6,6 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.List;
 
-// imports para sprite/animation
 import sprites.SpriteSheet;
 import sprites.Animation;
 import sprites.AnimatedSprite;
@@ -14,18 +13,15 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-/**
- * InimigoRapido - agora usa AnimatedSprite carregado do sprite sheet /sprites/golfinhoRapido.png
- * Mantive construtor original; carregamento lazy no drawInimigo.
- */
 public class InimigoRapido extends Inimigo {
 
     private AnimatedSprite sprite;
     private long lastSpriteTime = System.currentTimeMillis();
 
     public InimigoRapido(float x, float y, List<Point> caminho) {
+        // Largura/Altura física = 24, Sprite = 32. 
         super(x, y, caminho, 100, 3.0f, 5, 24, 24);
-        this.elemento = Elemento.ALGA; // <--- Elemento
+        this.elemento = Elemento.ALGA; 
     }
 
     @Override
@@ -35,12 +31,9 @@ public class InimigoRapido extends Inimigo {
                 BufferedImage sheet = ImageIO.read(getClass().getResourceAsStream("/sprites/golfinhoRapido.png"));
                 if (sheet != null) {
                     SpriteSheet ss = new SpriteSheet(sheet, 32, 32);
-                    sprite = new AnimatedSprite(new Animation(ss.getSprites(), 80, true)); // 80 ms por frame (mais rápido)
+                    sprite = new AnimatedSprite(new Animation(ss.getSprites(), 80, true));
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-                sprite = null;
-            } catch (NullPointerException npe) {
+            } catch (IOException | NullPointerException e) {
                 sprite = null;
             }
         }
@@ -51,9 +44,13 @@ public class InimigoRapido extends Inimigo {
 
         if (sprite != null) {
             sprite.update(delta);
-            sprite.render(g2, (int) x, (int) y);
+            
+            // Centralização no tile de 48px
+            int drawX = (int) x + 8;
+            int drawY = (int) y + 8;
+            
+            sprite.render(g2, drawX, drawY);
         } else {
-            // fallback original (círculo amarelo)
             g2.setColor(Color.YELLOW);
             g2.fillOval((int) x, (int) y, largura, altura);
         }
