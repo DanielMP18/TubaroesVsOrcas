@@ -18,29 +18,31 @@ public class PeixeExemplo {
         try {
             // Coloque seu arquivo em resources/sprites/ (ou dentro do classpath)
             BufferedImage sheet = ImageIO.read(getClass().getResourceAsStream("/sprites/shark_sheet.png"));
-            // supondo frames de 64x64 — ajuste para sua imagem
-            SpriteSheet ss = new SpriteSheet(sheet, 64, 64);
+            if (sheet == null) throw new IOException("recurso /sprites/shark_sheet.png não encontrado no classpath");
+            // frames 32x32, conforme você informou
+            SpriteSheet ss = new SpriteSheet(sheet, 32, 32);
             BufferedImage[] frames = ss.getSprites();
-            Animation anim = new Animation(frames, 100); // 100 ms por frame
+            Animation anim = new Animation(frames, 100); // 100 ms por frame (ajuste se quiser mais rápido/devagar)
             sprite = new AnimatedSprite(anim);
-        } catch (IOException | NullPointerException e) {
+        } catch (IOException | IllegalArgumentException e) {
             e.printStackTrace();
-            // se getResourceAsStream retornou null, verifique o caminho (veja checklist abaixo)
+            // Em desenvolvimento, lançar exceção ajuda a ver o problema; em produção troque por fallback
         }
         lastUpdateTime = System.currentTimeMillis();
     }
 
+    // método de conveniência que calcula delta internamente (mantive para minimizar mudanças no restante do projeto)
     public void update() {
         long now = System.currentTimeMillis();
         long delta = now - lastUpdateTime;
         lastUpdateTime = now;
 
-        sprite.update(delta);
+        if (sprite != null) sprite.update(delta);
 
         // lógica de movimento...
     }
 
     public void render(Graphics g) {
-        sprite.render(g, x, y);
+        if (sprite != null) sprite.render(g, x, y);
     }
 }
