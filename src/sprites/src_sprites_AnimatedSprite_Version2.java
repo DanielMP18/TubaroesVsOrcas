@@ -19,6 +19,14 @@ public class AnimatedSprite {
         g.drawImage(img, x, y, null);
     }
 
+    public void reset() {
+        animation.reset();
+    }
+
+    public boolean isFinished() {
+        return animation.isFinished();
+    }
+
     public int getWidth() {
         return animation.getCurrentFrame().getWidth();
     }
