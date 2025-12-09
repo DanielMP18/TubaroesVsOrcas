@@ -3,14 +3,12 @@ package entity;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.List;
-
 import sprites.SpriteSheet;
 import sprites.Animation;
 import sprites.AnimatedSprite;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
+import java.io.File;
 
 public class TorreLaser extends Torre {
 
@@ -26,7 +24,6 @@ public class TorreLaser extends Torre {
 
     public TorreLaser(int col, int row, int tamanho, List<Inimigo> inimigos, List<Projetil> projeteis) {
         super(col, row, tamanho, inimigos, projeteis);
-
         this.custo = CUSTO;
         this.alcance = 220;
         this.cadenciaDeTiro = 1_500_000_000L; 
@@ -34,35 +31,32 @@ public class TorreLaser extends Torre {
         this.custoUpgrade = 120; 
 
         try {
-            // 1. OVO
-            BufferedImage base = ImageIO.read(getClass().getResourceAsStream("/sprites/ovoSniper.png"));
-            if (base != null) {
-                SpriteSheet ss = new SpriteSheet(base, 32, 32);
-                baseSprite = new AnimatedSprite(new Animation(new BufferedImage[] { ss.getSprite(0, 0) }, 1000, true));
+            carregarSprite("res/sprites/ovoSniper.png", 1);
+            if (!carregarSprite("res/sprites/evolve1.png", 2)) {
+                carregarSprite("res/sprites/evolve3.png", 2);
             }
-
-            // 2. EVOLUÇÃO
-            BufferedImage evo;
-            try {
-                evo = ImageIO.read(getClass().getResourceAsStream("/sprites/evolve1.png"));
-            } catch (Exception e) {
-                evo = ImageIO.read(getClass().getResourceAsStream("/sprites/evolve3.png"));
-            }
-            if (evo != null) {
-                SpriteSheet ess = new SpriteSheet(evo, 32, 32);
-                evolveSprite = new AnimatedSprite(new Animation(ess.getSprites(), 100, false));
-            }
-            
-            // 3. TUBARÃO FINAL
-            BufferedImage finalImg = ImageIO.read(getClass().getResourceAsStream("/sprites/tubaraoSniper.png"));
-            if (finalImg != null) {
-                SpriteSheet fss = new SpriteSheet(finalImg, 32, 32);
-                finalSprite = new AnimatedSprite(new Animation(fss.getSprites(), 150, true));
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
+            carregarSprite("res/sprites/tubaraoSniper.png", 3);
+        } catch (Exception e) {
+            System.err.println("ERRO Torre Laser: " + e.getMessage());
         }
+    }
+    
+    private boolean carregarSprite(String path, int tipo) {
+        try {
+            File arquivo = new File(path);
+            if (!arquivo.exists()) return false;
+            
+            BufferedImage img = ImageIO.read(arquivo);
+            if (img == null) return false;
+
+            SpriteSheet ss = new SpriteSheet(img, 32, 32);
+            
+            // CORREÇÃO: Todos os tipos agora usam animação completa
+            if (tipo == 1) baseSprite = new AnimatedSprite(new Animation(ss.getSprites(), 150, true));
+            else if (tipo == 2) evolveSprite = new AnimatedSprite(new Animation(ss.getSprites(), 100, false));
+            else if (tipo == 3) finalSprite = new AnimatedSprite(new Animation(ss.getSprites(), 150, true));
+            return true;
+        } catch (Exception e) { return false; }
     }
 
     @Override
@@ -88,8 +82,6 @@ public class TorreLaser extends Torre {
 
         int tileX = col * tamanho;
         int tileY = row * tamanho;
-        
-        // Offset para centralizar
         int offset = (tamanho - 32) / 2;
 
         if (upgrading && evolveSprite != null) {
@@ -100,18 +92,17 @@ public class TorreLaser extends Torre {
                 pendingLevel = -1;
                 upgrading = false;
             }
-        } 
-        else if (getLevel() >= 2 && finalSprite != null) {
+        } else if (getLevel() >= 2 && finalSprite != null) {
             finalSprite.update(delta);
             finalSprite.render(g2, tileX + offset, tileY + offset);
-        } 
-        else if (baseSprite != null) {
+        } else if (baseSprite != null) {
             baseSprite.update(delta);
             baseSprite.render(g2, tileX + offset, tileY + offset);
-        } 
-        else {
+        } else {
             g2.setColor(Color.BLUE);
             g2.fillRect(tileX, tileY, tamanho, tamanho);
+            g2.setColor(Color.BLACK);
+            g2.drawRect(tileX, tileY, tamanho, tamanho);
         }
     }
 }
