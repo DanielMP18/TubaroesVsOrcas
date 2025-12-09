@@ -5,35 +5,48 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.util.List;
-
 import sprites.SpriteSheet;
 import sprites.Animation;
 import sprites.AnimatedSprite;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.File; // <--- Import Adicionado
 
 public class InimigoTank extends Inimigo {
 
     private AnimatedSprite sprite;
+    private boolean jaTentouCarregar = false;
     private long lastSpriteTime = System.currentTimeMillis();
 
     public InimigoTank(float x, float y, List<Point> caminho) {
+        // Mantive seus valores originais: vida 80, velocidade 1.0f, recompensa 20
         super(x, y, caminho, 80, 1.0f, 20, 36, 36); 
         this.elemento = Elemento.AGUA; 
     }
 
     @Override
     public void drawInimigo(Graphics2D g2) {
-        if (sprite == null) {
+        if (sprite == null && !jaTentouCarregar) {
+            jaTentouCarregar = true;
             try {
-                BufferedImage sheet = ImageIO.read(getClass().getResourceAsStream("/sprites/golfinhoTank.png"));
-                if (sheet != null) {
-                    SpriteSheet ss = new SpriteSheet(sheet, 32, 32);
-                    sprite = new AnimatedSprite(new Animation(ss.getSprites(), 140, true)); 
+                // --- CORREÇÃO AQUI ---
+                // Carrega "golfinhoTank.png" da pasta local
+                File arquivoImagem = new File("res/sprites/golfinhoTank.png");
+                
+                if (!arquivoImagem.exists()) {
+                    System.err.println("ERRO: Imagem não encontrada: " + arquivoImagem.getAbsolutePath());
+                } else {
+                    BufferedImage sheet = ImageIO.read(arquivoImagem);
+                    if (sheet != null) {
+                        SpriteSheet ss = new SpriteSheet(sheet, 32, 32);
+                        // Mantive sua velocidade de animação: 140
+                        sprite = new AnimatedSprite(new Animation(ss.getSprites(), 140, true)); 
+                    }
                 }
-            } catch (IOException | NullPointerException e) {
-                sprite = null;
+            } catch (IOException e) {
+                System.err.println("Erro ao ler golfinhoTank:");
+                e.printStackTrace();
             }
         }
 
@@ -43,13 +56,11 @@ public class InimigoTank extends Inimigo {
 
         if (sprite != null) {
             sprite.update(delta);
-            
-            // Centralização no tile de 48px
             int drawX = (int) x + 8;
             int drawY = (int) y + 8;
-            
             sprite.render(g2, drawX, drawY);
         } else {
+            // Se falhar, desenha o retângulo cinza escuro
             g2.setColor(Color.DARK_GRAY);
             g2.fillRect((int) x, (int) y, largura, altura);
         }
