@@ -20,8 +20,8 @@ public class InimigoTank extends Inimigo {
     private long lastSpriteTime = System.currentTimeMillis();
 
     public InimigoTank(float x, float y, List<Point> caminho) {
-        // Mantive seus valores originais: vida 80, velocidade 1.0f, recompensa 20
-        super(x, y, caminho, 80, 1.0f, 20, 36, 36); 
+        
+        super(x, y, caminho, 750, 1.0f, 20, 36, 36); 
         this.elemento = Elemento.AGUA; 
     }
 
