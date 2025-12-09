@@ -36,7 +36,6 @@ public abstract class Torre {
         this.ultimoDisparo = 0;
         this.alvo = null;
         
-        
         this.elemento = Elemento.NEUTRO; 
         this.nivel = 1;
     }
@@ -87,19 +86,36 @@ public abstract class Torre {
         System.out.println("Torre especializada em " + novoElemento);
     }
     
+    // --- MÉTODOS ABSTRATOS QUE AS FILHAS DEVEM IMPLEMENTAR ---
     public abstract void draw(Graphics2D g2);
-
     protected abstract void atirar();
+    
+    // Este método permite que cada torre faça sua animação de upgrade
+    public abstract void startUpgrade(int targetLevel);
 
-    // --- Getters ---
+    // --- Getters e Setters (ATUALIZADO) ---
     public int getCusto() { return custo; }
     public int getCol() { return col; }
     public int getRow() { return row; }
     public Elemento getElemento() { return elemento; }
-    public int getNivel() { return nivel; }
     public int getCustoUpgrade() { return custoUpgrade; }
     public boolean isEspecializada() { return this.elemento != Elemento.NEUTRO; }
     public int getX() { return x; }
     public int getY() { return y; }
     public int getAlcance() { return alcance; }
+
+    // --- AQUI ESTAVA O PROBLEMA: Adicionamos compatibilidade ---
+    
+    // Retorna o nível (Compatível com inglês)
+    public int getLevel() { 
+        return nivel; 
+    }
+    
+    // Define o nível (Compatível com inglês)
+    public void setLevel(int novoNivel) {
+        this.nivel = novoNivel;
+    }
+    
+    // Mantém o antigo só por garantia
+    public int getNivel() { return nivel; }
 }
