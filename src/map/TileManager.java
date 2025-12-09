@@ -4,10 +4,11 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.LinkedList;
 import javax.imageio.ImageIO;
+import sprites.AnimatedTile;
 import sprites.SpriteSheet;
-import java.io.File; // <--- Importante: Adicionado para ler os arquivos da pasta
 
 public class TileManager {
 
@@ -19,8 +20,8 @@ public class TileManager {
     private final int[][] mapGrid;
     private final LinkedList<Point> caminho;
 
-    // Imagens
-    private BufferedImage[] fundoTiles = null;
+    // Imagens e Animações
+    private AnimatedTile waterTile; // OTIMIZAÇÃO: Apenas UMA instância para toda a água
     private BufferedImage[] caminhoTiles = null;
 
     public TileManager(int tamanhoDoTitulo, int maxColunas, int maxLinhas) {
@@ -43,26 +44,28 @@ public class TileManager {
 
     private void loadMapSprites() {
         try {
-            // --- CARREGAR FUNDO (Água) ---
-            // Mudança: Agora procura o arquivo na pasta 'res' da raiz
+            // --- CARREGAR FUNDO (Água - Animado) ---
             File arquivoFundo = new File("res/sprites/fundoDoMar.png");
-            
+
             if (arquivoFundo.exists()) {
                 BufferedImage fundo = ImageIO.read(arquivoFundo);
                 if (fundo != null) {
-                    // Se o seu sprite for 32x32
+                    // SpriteSheet 2x2 (Imaginando imagem 64x64px com tiles de 32x32px)
                     SpriteSheet sfundo = new SpriteSheet(fundo, 32, 32);
-                    fundoTiles = sfundo.getSprites();
-                    System.out.println("✅ Imagem carregada: fundoDoMar.png");
+                    BufferedImage[] fundoFrames = sfundo.getSprites(); // Pega os 4 frames
+
+                    // Inicializa a instância única do tile de água
+                    waterTile = new AnimatedTile(fundoFrames, tamanhoDoTitulo);
+
+                    System.out.println("✅ Animação de Fundo (Water) carregada.");
                 }
             } else {
                 System.err.println("❌ ERRO: Não achou a imagem: " + arquivoFundo.getAbsolutePath());
             }
 
-            // --- CARREGAR CAMINHO (Areia) ---
-            // Mudança: Agora procura o arquivo na pasta 'res' da raiz
+            // --- CARREGAR CAMINHO (Areia - Estático) ---
             File arquivoCaminho = new File("res/sprites/caminho.png");
-            
+
             if (arquivoCaminho.exists()) {
                 BufferedImage caminhoImg = ImageIO.read(arquivoCaminho);
                 if (caminhoImg != null) {
@@ -80,7 +83,6 @@ public class TileManager {
         }
     }
 
-    // Define o desenho do "S" do caminho
     private void criarMapaFixo() {
         // Pinta tudo de 0 (Água)
         for (int col = 0; col < maxColunas; col++) {
@@ -108,10 +110,9 @@ public class TileManager {
     }
 
     private void desenharSegmento(int c1, int r1, int c2, int r2) {
-        // Lógica para preencher o grid e a lista de pontos
         if (validarCoords(c1, r1)) caminho.add(new Point(c1 * tamanhoDoTitulo, r1 * tamanhoDoTitulo));
 
-        if (c1 == c2) { 
+        if (c1 == c2) {
             for (int r = Math.min(r1, r2); r <= Math.max(r1, r2); r++) {
                 if (validarCoords(c1, r)) mapGrid[c1][r] = 1;
             }
@@ -126,6 +127,13 @@ public class TileManager {
         return c >= 0 && c < maxColunas && r >= 0 && r < maxLinhas;
     }
 
+    // Atualiza a animação da água (apenas uma vez por frame)
+    public void update(long deltaMs) {
+        if (waterTile != null) {
+            waterTile.update(deltaMs);
+        }
+    }
+
     public void draw(Graphics2D g2) {
         for (int col = 0; col < maxColunas; col++) {
             for (int row = 0; row < maxLinhas; row++) {
@@ -138,23 +146,23 @@ public class TileManager {
                         BufferedImage frame = caminhoTiles[(col + row) % caminhoTiles.length];
                         g2.drawImage(frame, tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo, null);
                     } else {
-                        // FALLBACK: Se não tiver imagem, desenha BEGE
-                        g2.setColor(new Color(194, 178, 128)); 
+                        // FALLBACK: BEGE
+                        g2.setColor(new Color(194, 178, 128));
                         g2.fillRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
-                        g2.setColor(Color.BLACK); // Borda para ver o grid
+                        g2.setColor(Color.BLACK);
                         g2.drawRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
                     }
-                } 
+                }
                 // Se for 0, é ÁGUA (Fundo)
                 else {
-                    if (fundoTiles != null && fundoTiles.length > 0) {
-                        BufferedImage frame = fundoTiles[(col + row) % fundoTiles.length];
-                        g2.drawImage(frame, tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo, null);
+                    if (waterTile != null) {
+                        // Desenha o frame atual da animação na posição X, Y
+                        waterTile.draw(g2, tileX, tileY);
                     } else {
-                        // FALLBACK: Se não tiver imagem, desenha AZUL
-                        g2.setColor(new Color(0, 100, 200)); 
+                        // FALLBACK: AZUL
+                        g2.setColor(new Color(0, 100, 200));
                         g2.fillRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
-                        g2.setColor(Color.WHITE); // Borda fraca
+                        g2.setColor(Color.WHITE);
                         g2.drawRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
                     }
                 }
@@ -164,7 +172,6 @@ public class TileManager {
 
     public boolean isTileValidoParaConstrucao(int col, int row) {
         if (validarCoords(col, row)) {
-            // Retorna TRUE se for água (0), FALSE se for caminho (1)
             return mapGrid[col][row] == 0;
         }
         return false;
