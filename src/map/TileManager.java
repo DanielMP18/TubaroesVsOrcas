@@ -1,38 +1,25 @@
-package map; 
+package map;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Composite;
-import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.LinkedList;
-import java.util.List;
-
 import javax.imageio.ImageIO;
-
 import sprites.SpriteSheet;
+import java.io.File; // <--- Importante: Adicionado para ler os arquivos da pasta
 
-/**
- * TileManager - versão mínima atualizada para usar sprites de mapa (fundoDoMar.png e caminho.png).
- *
- * - Carrega os sprite sheets (assumindo frames 32x32).
- * - Desenha tiles usando frames dos sheets, escalando para o tamanhoDoTitulo.
- * - Mantém mapGrid e método isTileValidoParaConstrucao() intactos.
- * - Usa LinkedList<Point> para caminho para compatibilidade com getFirst() usado em GamePanel.
- */
 public class TileManager {
 
     private final int tamanhoDoTitulo;
     private final int maxColunas;
     private final int maxLinhas;
 
+    // A matriz que diz o que é cada quadrado (0 = Água/Construção, 1 = Caminho)
     private final int[][] mapGrid;
     private final LinkedList<Point> caminho;
 
-    // Sprites do mapa (cada elemento é um frame 32x32 do sheet)
+    // Imagens
     private BufferedImage[] fundoTiles = null;
     private BufferedImage[] caminhoTiles = null;
 
@@ -44,133 +31,145 @@ public class TileManager {
         this.mapGrid = new int[maxColunas][maxLinhas];
         this.caminho = new LinkedList<>();
 
-        criarMapaFixo();
+        System.out.println("--- INICIANDO TILEMANAGER ---");
 
-        // tenta carregar sprites do mapa (se falhar, continua com render fallback)
+        // 1. Cria a lógica (Define o desenho do mapa na memória)
+        criarMapaFixo();
+        System.out.println("Mapa Lógico Criado com Sucesso.");
+
+        // 2. Carrega as imagens
         loadMapSprites();
     }
 
     private void loadMapSprites() {
         try {
-            BufferedImage fundo = ImageIO.read(getClass().getResourceAsStream("/sprites/fundoDoMar.png"));
-            BufferedImage caminhoImg = ImageIO.read(getClass().getResourceAsStream("/sprites/caminho.png"));
-
-            if (fundo != null) {
-                // assumimos frames 32x32 no sheet do fundo
-                SpriteSheet sfundo = new SpriteSheet(fundo, 32, 32);
-                fundoTiles = sfundo.getSprites();
+            // --- CARREGAR FUNDO (Água) ---
+            // Mudança: Agora procura o arquivo na pasta 'res' da raiz
+            File arquivoFundo = new File("res/sprites/fundoDoMar.png");
+            
+            if (arquivoFundo.exists()) {
+                BufferedImage fundo = ImageIO.read(arquivoFundo);
+                if (fundo != null) {
+                    // Se o seu sprite for 32x32
+                    SpriteSheet sfundo = new SpriteSheet(fundo, 32, 32);
+                    fundoTiles = sfundo.getSprites();
+                    System.out.println("✅ Imagem carregada: fundoDoMar.png");
+                }
+            } else {
+                System.err.println("❌ ERRO: Não achou a imagem: " + arquivoFundo.getAbsolutePath());
             }
 
-            if (caminhoImg != null) {
-                SpriteSheet scaminho = new SpriteSheet(caminhoImg, 32, 32);
-                caminhoTiles = scaminho.getSprites();
+            // --- CARREGAR CAMINHO (Areia) ---
+            // Mudança: Agora procura o arquivo na pasta 'res' da raiz
+            File arquivoCaminho = new File("res/sprites/caminho.png");
+            
+            if (arquivoCaminho.exists()) {
+                BufferedImage caminhoImg = ImageIO.read(arquivoCaminho);
+                if (caminhoImg != null) {
+                    SpriteSheet scaminho = new SpriteSheet(caminhoImg, 32, 32);
+                    caminhoTiles = scaminho.getSprites();
+                    System.out.println("✅ Imagem carregada: caminho.png");
+                }
+            } else {
+                System.err.println("❌ ERRO: Não achou a imagem: " + arquivoCaminho.getAbsolutePath());
             }
-        } catch (IOException | IllegalArgumentException e) {
+
+        } catch (Exception e) {
             e.printStackTrace();
-            fundoTiles = null;
-            caminhoTiles = null;
-        } catch (NullPointerException npe) {
-            // recurso não encontrado no classpath
-            fundoTiles = null;
-            caminhoTiles = null;
+            System.err.println("Erro fatal ao carregar imagens do mapa.");
         }
     }
 
+    // Define o desenho do "S" do caminho
     private void criarMapaFixo() {
-        // 1. Preenche tudo com "água" (0) onde se pode construir
+        // Pinta tudo de 0 (Água)
         for (int col = 0; col < maxColunas; col++) {
             for (int row = 0; row < maxLinhas; row++) {
                 mapGrid[col][row] = 0;
             }
         }
 
-        desenharSegmento(0, 4, 6, 4);    // Termina em: (6, 4)
-        desenharSegmento(6, 4, 6, 1);    // Começa em: (6, 4). Termina em: (6, 1)
-        desenharSegmento(6, 1, 10, 1);   // Começa em: (6, 1). Termina em: (10, 1)
-        desenharSegmento(10, 1, 10, 6);  // Começa em: (10, 1). Termina em: (10, 7)
-        desenharSegmento(10, 6, 15, 6);  // Começa em: (10, 7). Termina em: (15, 7)
-        desenharSegmento(15, 6, 15, 4);  // Começa em: (15, 7). Termina em: (15, 4)
-        desenharSegmento(15, 4, 18, 4);  // Começa em: (15, 4). Termina em: (18, 4)
-        desenharSegmento(18, 4, 18, 9);  // Começa em: (18, 4). Termina em: (18, 9)
-        desenharSegmento(18, 9, 8, 9);   // Começa em: (18, 9). Termina em: (8, 9)
-        desenharSegmento(8, 9, 8, 12);   // Começa em: (8, 9). Termina em: (8, 12)
-        desenharSegmento(8, 12, 21, 12); // Começa em: (8, 12). Termina em: (21, 12)
-        desenharSegmento(21, 12, 21, 9); // Começa em: (21, 12). Termina em: (21, 9)
-        desenharSegmento(21, 9, 27, 9);  // Começa em: (21, 9). Termina em: (27, 9)
+        // Desenha os segmentos do caminho (Marca como 1)
+        desenharSegmento(0, 4, 6, 4);
+        desenharSegmento(6, 4, 6, 1);
+        desenharSegmento(6, 1, 10, 1);
+        desenharSegmento(10, 1, 10, 6);
+        desenharSegmento(10, 6, 15, 6);
+        desenharSegmento(15, 6, 15, 4);
+        desenharSegmento(15, 4, 18, 4);
+        desenharSegmento(18, 4, 18, 9);
+        desenharSegmento(18, 9, 8, 9);
+        desenharSegmento(8, 9, 8, 12);
+        desenharSegmento(8, 12, 21, 12);
+        desenharSegmento(21, 12, 21, 9);
+        desenharSegmento(21, 9, 27, 9);
 
-        // ponto final(destino) - salva em pixels (consistente com uso atual)
         caminho.add(new Point(27 * tamanhoDoTitulo, 9 * tamanhoDoTitulo));
     }
 
     private void desenharSegmento(int c1, int r1, int c2, int r2) {
-        // Adiciona o ponto inicial do segmento (a curva)
-        // Verifica os limites antes de adicionar
-        if (c1 >= 0 && c1 < maxColunas && r1 >= 0 && r1 < maxLinhas) {
-             caminho.add(new Point(c1 * tamanhoDoTitulo, r1 * tamanhoDoTitulo));
-        }
+        // Lógica para preencher o grid e a lista de pontos
+        if (validarCoords(c1, r1)) caminho.add(new Point(c1 * tamanhoDoTitulo, r1 * tamanhoDoTitulo));
 
-        // Determina a direção e desenha no grid
-        if (c1 == c2) { // Movimento Vertical
+        if (c1 == c2) { 
             for (int r = Math.min(r1, r2); r <= Math.max(r1, r2); r++) {
-                if (c1 >= 0 && c1 < maxColunas && r >= 0 && r < maxLinhas) {
-                    mapGrid[c1][r] = 1; // 1 = caminho
-                }
+                if (validarCoords(c1, r)) mapGrid[c1][r] = 1;
             }
-        } else if (r1 == r2) { // Movimento Horizontal
+        } else if (r1 == r2) {
             for (int c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) {
-                if (c >= 0 && c < maxColunas && r1 >= 0 && r1 < maxLinhas) {
-                    mapGrid[c][r1] = 1; // 1 = caminho
-                }
+                if (validarCoords(c, r1)) mapGrid[c][r1] = 1;
             }
         }
     }
 
-    /**
-     * Desenha o mapa usando os sprites se carregados; caso contrário, usa o fallback colorido.
-     */
+    private boolean validarCoords(int c, int r) {
+        return c >= 0 && c < maxColunas && r >= 0 && r < maxLinhas;
+    }
+
     public void draw(Graphics2D g2) {
         for (int col = 0; col < maxColunas; col++) {
             for (int row = 0; row < maxLinhas; row++) {
                 int tileX = col * tamanhoDoTitulo;
                 int tileY = row * tamanhoDoTitulo;
 
+                // Se for 1, é CAMINHO
                 if (mapGrid[col][row] == 1) {
-                    // caminho
                     if (caminhoTiles != null && caminhoTiles.length > 0) {
-                        // escolhe um frame baseado na posição para variar
                         BufferedImage frame = caminhoTiles[(col + row) % caminhoTiles.length];
                         g2.drawImage(frame, tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo, null);
                     } else {
-                        g2.setColor(new Color(88, 153, 255)); // Cor do caminho
+                        // FALLBACK: Se não tiver imagem, desenha BEGE
+                        g2.setColor(new Color(194, 178, 128)); 
                         g2.fillRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
+                        g2.setColor(Color.BLACK); // Borda para ver o grid
+                        g2.drawRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
                     }
-                } else {
-                    // fundo (água)
+                } 
+                // Se for 0, é ÁGUA (Fundo)
+                else {
                     if (fundoTiles != null && fundoTiles.length > 0) {
                         BufferedImage frame = fundoTiles[(col + row) % fundoTiles.length];
                         g2.drawImage(frame, tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo, null);
                     } else {
-                        g2.setColor(new Color(0, 100, 200)); // Cor de água para o fundo
+                        // FALLBACK: Se não tiver imagem, desenha AZUL
+                        g2.setColor(new Color(0, 100, 200)); 
                         g2.fillRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
+                        g2.setColor(Color.WHITE); // Borda fraca
+                        g2.drawRect(tileX, tileY, tamanhoDoTitulo, tamanhoDoTitulo);
                     }
                 }
-
-                // desenha overlay de colocação se for tile "0" (água) e quiser destacar lugares específicos
-                // No seu código original o lugar placeable era simplesmente mapGrid == 0, então não desenhamos nada extra.
             }
         }
     }
 
     public boolean isTileValidoParaConstrucao(int col, int row) {
-        if (col >= 0 && col < maxColunas && row >= 0 && row < maxLinhas) {
-            return mapGrid[col][row] == 0; // Pode construir na água (0)
+        if (validarCoords(col, row)) {
+            // Retorna TRUE se for água (0), FALSE se for caminho (1)
+            return mapGrid[col][row] == 0;
         }
         return false;
     }
 
-    /**
-     * Retorna a LinkedList do caminho (compatível com getFirst() usado em GamePanel).
-     */
     public LinkedList<Point> getCaminho() {
         return this.caminho;
     }
