@@ -3,22 +3,20 @@ package entity;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.List;
-
 import sprites.SpriteSheet;
 import sprites.Animation;
 import sprites.AnimatedSprite;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
+import java.io.File; 
 
 public class TorreCanhao extends Torre {
 
     public static final int CUSTO = 100;
 
-    private AnimatedSprite baseSprite;   // OVO
-    private AnimatedSprite evolveSprite; // ANIMAÇÃO DE EVOLUÇÃO
-    private AnimatedSprite finalSprite;  // TUBARÃO FINAL
+    private AnimatedSprite baseSprite;   
+    private AnimatedSprite evolveSprite; 
+    private AnimatedSprite finalSprite;  
     
     private boolean upgrading = false;
     private int pendingLevel = -1;
@@ -26,7 +24,6 @@ public class TorreCanhao extends Torre {
 
     public TorreCanhao(int col, int row, int tamanho, List<Inimigo> inimigos, List<Projetil> projeteis) {
         super(col, row, tamanho, inimigos, projeteis);
-
         this.custo = CUSTO;
         this.alcance = 180;
         this.cadenciaDeTiro = 800_000_000L; 
@@ -34,29 +31,45 @@ public class TorreCanhao extends Torre {
         this.custoUpgrade = 75; 
 
         try {
-            // 1. OVO
-            BufferedImage base = ImageIO.read(getClass().getResourceAsStream("/sprites/ovoTub1.png"));
-            if (base != null) {
-                SpriteSheet ss = new SpriteSheet(base, 32, 32);
-                baseSprite = new AnimatedSprite(new Animation(new BufferedImage[] { ss.getSprite(0, 0) }, 1000, true));
-            }
+            carregarBase();
+            carregarEvolucao();
+            carregarFinal();
+        } catch (Exception e) {
+            System.err.println("ERRO ao carregar sprites da Torre Canhão: " + e.getMessage());
+        }
+    }
 
-            // 2. EVOLUÇÃO (Usa evolve3 se não tiver específico)
-            BufferedImage evo = ImageIO.read(getClass().getResourceAsStream("/sprites/evolve3.png"));
-            if (evo != null) {
-                SpriteSheet ess = new SpriteSheet(evo, 32, 32);
-                evolveSprite = new AnimatedSprite(new Animation(ess.getSprites(), 100, false));
+    private void carregarBase() throws Exception {
+        File arquivo = new File("res/sprites/ovoTub1.png");
+        if (arquivo.exists()) {
+            BufferedImage img = ImageIO.read(arquivo);
+            if (img != null) {
+                SpriteSheet ss = new SpriteSheet(img, 32, 32);
+                // CORREÇÃO: ss.getSprites() pega a animação toda agora
+                baseSprite = new AnimatedSprite(new Animation(ss.getSprites(), 150, true));
             }
-            
-            // 3. TUBARÃO FINAL
-            BufferedImage finalImg = ImageIO.read(getClass().getResourceAsStream("/sprites/tubarao1.png"));
-            if (finalImg != null) {
-                SpriteSheet fss = new SpriteSheet(finalImg, 32, 32);
-                finalSprite = new AnimatedSprite(new Animation(fss.getSprites(), 150, true));
-            }
+        }
+    }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void carregarEvolucao() throws Exception {
+        File arquivo = new File("res/sprites/evolve3.png");
+        if (arquivo.exists()) {
+            BufferedImage img = ImageIO.read(arquivo);
+            if (img != null) {
+                SpriteSheet ss = new SpriteSheet(img, 32, 32);
+                evolveSprite = new AnimatedSprite(new Animation(ss.getSprites(), 100, false));
+            }
+        }
+    }
+
+    private void carregarFinal() throws Exception {
+        File arquivo = new File("res/sprites/tubarao1.png");
+        if (arquivo.exists()) {
+            BufferedImage img = ImageIO.read(arquivo);
+            if (img != null) {
+                SpriteSheet ss = new SpriteSheet(img, 32, 32);
+                finalSprite = new AnimatedSprite(new Animation(ss.getSprites(), 150, true));
+            }
         }
     }
 
@@ -81,38 +94,29 @@ public class TorreCanhao extends Torre {
         long delta = now - lastSpriteTime;
         lastSpriteTime = now;
 
-        // Posição base do Tile (48x48)
         int tileX = col * tamanho;
         int tileY = row * tamanho;
-
-        // CÁLCULO DE CENTRALIZAÇÃO: (48 - 32) / 2 = 8 pixels de margem
         int offset = (tamanho - 32) / 2;
 
         if (upgrading && evolveSprite != null) {
             evolveSprite.update(delta);
-            // Desenha com offset, tamanho original (32x32)
             evolveSprite.render(g2, tileX + offset, tileY + offset);
-            
             if (evolveSprite.isFinished()) {
                 this.setLevel(pendingLevel);
                 pendingLevel = -1;
                 upgrading = false;
             }
-        } 
-        else if (getLevel() >= 2 && finalSprite != null) {
-            // Desenha Tubarão
+        } else if (getLevel() >= 2 && finalSprite != null) {
             finalSprite.update(delta);
             finalSprite.render(g2, tileX + offset, tileY + offset);
-        } 
-        else if (baseSprite != null) {
-            // Desenha Ovo
+        } else if (baseSprite != null) {
             baseSprite.update(delta);
             baseSprite.render(g2, tileX + offset, tileY + offset);
-        } 
-        else {
-            // Fallback se imagem falhar
+        } else {
             g2.setColor(Color.GREEN);
             g2.fillRect(tileX, tileY, tamanho, tamanho);
+            g2.setColor(Color.BLACK);
+            g2.drawRect(tileX, tileY, tamanho, tamanho);
         }
     }
 }
