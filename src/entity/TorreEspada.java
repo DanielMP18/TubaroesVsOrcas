@@ -25,8 +25,8 @@ public class TorreEspada extends Torre {
     public TorreEspada(int col, int row, int tamanho, List<Inimigo> inimigos, List<Projetil> projeteis) {
         super(col, row, tamanho, inimigos, projeteis);
         this.custo = CUSTO;
-        this.alcance = 100;
-        this.cadenciaDeTiro = 600_000_000L; 
+        this.alcance = 150;
+        this.cadenciaDeTiro = 400_000_000L; 
         this.danoBase = 10;
         this.custoUpgrade = 90;
 
@@ -106,3 +106,4 @@ public class TorreEspada extends Torre {
         }
     }
 }
+
