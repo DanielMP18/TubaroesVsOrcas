@@ -25,7 +25,7 @@ public class TorreCanhao extends Torre {
     public TorreCanhao(int col, int row, int tamanho, List<Inimigo> inimigos, List<Projetil> projeteis) {
         super(col, row, tamanho, inimigos, projeteis);
         this.custo = CUSTO;
-        this.alcance = 180;
+        this.alcance = 200;
         this.cadenciaDeTiro = 800_000_000L; 
         this.danoBase = 25;
         this.custoUpgrade = 75; 
