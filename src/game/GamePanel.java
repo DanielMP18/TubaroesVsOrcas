@@ -31,9 +31,9 @@ public class GamePanel extends JPanel implements Runnable {
     private List<Projetil> projeteis;
 
     // --- Estado do Jogo ---
-    private int vidaBase = 3;
+    private int vidaBase = 10000000;
     // "ondaAtual" agora é gerida pelo WaveManager, mas mantemos leitura aqui para HUD
-    private int dinheiro = 350; // Aumentei um pouco o dinheiro inicial
+    private int dinheiro = 10000; // Aumentei um pouco o dinheiro inicial
 
     public static final int ESTADO_PREPARACAO = 0;
     public static final int ESTADO_JOGANDO = 1;
@@ -364,17 +364,17 @@ public class GamePanel extends JPanel implements Runnable {
 
         g2.setColor(tipoTorreSelecionada == 1 ? Color.YELLOW : Color.WHITE);
         g2.draw(boxTorreCanhao);
-        g2.drawString("Canhão", boxTorreCanhao.x + 10, boxTorreCanhao.y + 20);
+        g2.drawString("Tridente", boxTorreCanhao.x + 10, boxTorreCanhao.y + 20);
         g2.drawString("Custo: $" + TorreCanhao.CUSTO, boxTorreCanhao.x + 10, boxTorreCanhao.y + 45);
 
         g2.setColor(tipoTorreSelecionada == 2 ? Color.YELLOW : Color.WHITE);
         g2.draw(boxTorreLaser);
-        g2.drawString("Laser", boxTorreLaser.x + 10, boxTorreLaser.y + 20);
+        g2.drawString("Sniper", boxTorreLaser.x + 10, boxTorreLaser.y + 20);
         g2.drawString("Custo: $" + TorreLaser.CUSTO, boxTorreLaser.x + 10, boxTorreLaser.y + 45);
 
         g2.setColor(tipoTorreSelecionada == 3 ? Color.YELLOW : Color.WHITE);
         g2.draw(boxTorreEspada);
-        g2.drawString("Espada", boxTorreEspada.x + 10, boxTorreEspada.y + 20);
+        g2.drawString("Lixa", boxTorreEspada.x + 10, boxTorreEspada.y + 20);
         g2.drawString("Custo: $" + TorreEspada.CUSTO, boxTorreEspada.x + 10, boxTorreEspada.y + 45);
     }
 
