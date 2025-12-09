@@ -34,4 +34,9 @@ public class AnimatedSprite {
     public int getHeight() {
         return animation.getCurrentFrame().getHeight();
     }
+
+    // --- ESSE É O MÉTODO QUE O AnimatedTile ESTÁ PROCURANDO E NÃO ACHAVA ---
+    public BufferedImage getCurrentFrame() {
+        return animation.getCurrentFrame();
+    }
 }
