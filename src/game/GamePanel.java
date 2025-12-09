@@ -2,15 +2,22 @@ package game;
 
 import entity.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;    // <--- IMPORT NOVO
+import java.awt.event.MouseAdapter; // <--- IMPORT NOVO
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
+import java.awt.image.BufferedImage;
+import java.io.File; // <--- IMPORT NOVO
+import java.io.IOException;               // <--- IMPORT NOVO
+import java.util.ArrayList;        // <--- IMPORT NOVO
 import java.util.Iterator;
 import java.util.List;
-import javax.swing.*;
+import javax.imageio.ImageIO;
+import javax.swing.*;      // <--- IMPORT NOVO
 import map.TileManager;
 
-public class GamePanel extends JPanel implements Runnable {
+// Adicionamos "KeyListener" aqui para detectar o ENTER
+public class GamePanel extends JPanel implements Runnable, KeyListener {
 
     // --- Configurações de Tela ---
     final int tamanhoOriginalTile = 16;
@@ -25,24 +32,25 @@ public class GamePanel extends JPanel implements Runnable {
 
     // --- Gerenciadores e Entidades ---
     private TileManager tileManager;
-    private WaveManager waveManager; // ADICIONADO
+    private WaveManager waveManager;
     private List<Inimigo> inimigos;
     private List<Torre> torres;
     private List<Projetil> projeteis;
 
     // --- Estado do Jogo ---
-    private int vidaBase = 10000000;
-    // "ondaAtual" agora é gerida pelo WaveManager, mas mantemos leitura aqui para HUD
-    private int dinheiro = 10000; // Aumentei um pouco o dinheiro inicial
+    private int vidaBase = 5;
+    private int dinheiro = 500;
 
     public static final int ESTADO_PREPARACAO = 0;
     public static final int ESTADO_JOGANDO = 1;
     public static final int ESTADO_FIM_DE_JOGO = 2;
     public static final int ESTADO_VITORIA = 3;
+    public static final int ESTADO_MENU = 4; // <--- NOVO ESTADO
+    
     private int estadoDoJogo;
+    private BufferedImage menuImagem; // <--- Imagem do Menu
 
     // --- Spawn de Inimigos e Ondas ---
-    // (Removidos arrays hardcoded e cooldowns manuais, agora no WaveManager)
     private long tempoEntreOndas = 5_000_000_000L;
     private long proximaOndaTimer = 0;
 
@@ -66,19 +74,38 @@ public class GamePanel extends JPanel implements Runnable {
         this.setPreferredSize(new Dimension(larguraTela, alturaTela));
         this.setBackground(Color.BLACK);
         this.setDoubleBuffered(true);
-        this.setFocusable(true);
+        this.setFocusable(true); // Importante para o teclado funcionar
+        this.addKeyListener(this); // Adiciona o ouvinte de teclado
 
         this.tileManager = new TileManager(tamanhoDoTile, maxColunasTela, maxLinhasTela);
-        this.waveManager = new WaveManager(); // INICIALIZA O GERENCIADOR
+        this.waveManager = new WaveManager();
 
         this.inimigos = new ArrayList<>();
         this.torres = new ArrayList<>();
         this.projeteis = new ArrayList<>();
 
-        this.estadoDoJogo = ESTADO_PREPARACAO;
+        // COMEÇA NO MENU
+        this.estadoDoJogo = ESTADO_MENU;
         this.proximaOndaTimer = System.nanoTime() + tempoEntreOndas;
 
+        // Carrega a imagem do menu
+        carregarImagemMenu();
+
         adicionarControles();
+    }
+
+    private void carregarImagemMenu() {
+        try {
+            // Garanta que a imagem 'menu.png' esteja na pasta 'res/sprites/'
+            File arq = new File("res/sprites/menu.png");
+            if (arq.exists()) {
+                menuImagem = ImageIO.read(arq);
+            } else {
+                System.out.println("AVISO: Imagem menu.png não encontrada em res/sprites/");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void adicionarControles() {
@@ -92,6 +119,9 @@ public class GamePanel extends JPanel implements Runnable {
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                // Se estiver no MENU, o clique do mouse não faz nada (não constrói torre)
+                if (estadoDoJogo == ESTADO_MENU) return;
+
                 if (estadoDoJogo == ESTADO_FIM_DE_JOGO || estadoDoJogo == ESTADO_VITORIA) return;
 
                 // --- CLIQUE NO MAPA ---
@@ -153,28 +183,38 @@ public class GamePanel extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        double drawInterval = 1000000000.0 / 60.0;
+        // --- LOOP PRINCIPAL DO JOGO ---
+        final double UPS_LIMIT = 60.0;
+        final double NS_PER_UPDATE = 1_000_000_000.0 / UPS_LIMIT;
+        final long FIXED_UPDATE_MS = (long) (1000 / UPS_LIMIT);
+
         double delta = 0;
         long lastTime = System.nanoTime();
         long currentTime;
 
         while (gameThread != null) {
             currentTime = System.nanoTime();
-            delta += (currentTime - lastTime) / drawInterval;
+            delta += (currentTime - lastTime) / NS_PER_UPDATE;
             lastTime = currentTime;
 
             if (delta >= 1) {
-                update();
+                update(FIXED_UPDATE_MS);
                 repaint();
                 delta--;
             }
         }
     }
 
-    public void update() {
+    public void update(long deltaMs) {
+        // Se estiver no MENU, para tudo e espera
+        if (estadoDoJogo == ESTADO_MENU) return;
+
         if (estadoDoJogo == ESTADO_FIM_DE_JOGO || estadoDoJogo == ESTADO_VITORIA) {
             return;
         }
+
+        // Atualiza a animação do fundo
+        tileManager.update(deltaMs);
 
         // --- FASE DE PREPARAÇÃO ---
         if (estadoDoJogo == ESTADO_PREPARACAO) {
@@ -187,15 +227,13 @@ public class GamePanel extends JPanel implements Runnable {
             return;
         }
 
-        // --- FASE JOGANDO (SPAWN E ATUALIZAÇÃO) ---
-
-        // 1. Tenta spawnar inimigo se houver
+        // --- FASE JOGANDO ---
         int tipoParaSpawnar = waveManager.getProximoInimigoParaSpawnar();
         if (tipoParaSpawnar != -1) {
             spawnInimigo(tipoParaSpawnar);
         }
 
-        // 2. Atualiza Inimigos
+        // Atualiza Inimigos
         Iterator<Inimigo> inimigoIt = inimigos.iterator();
         while (inimigoIt.hasNext()) {
             Inimigo inimigo = inimigoIt.next();
@@ -214,7 +252,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        // 3. Atualiza Torres e Projéteis
+        // Atualiza Torres e Projéteis
         for (Torre torre : torres) {
             torre.update();
         }
@@ -226,9 +264,8 @@ public class GamePanel extends JPanel implements Runnable {
             else projetilIt.remove();
         }
 
-        // 4. Checa Fim da Onda ou Vitoria
+        // Checa Fim da Onda
         if (inimigos.isEmpty() && waveManager.isOndaCompletaDeSpawnar()) {
-            // Se terminou de spawnar E não tem inimigos vivos
             waveManager.proximaOnda();
 
             if (waveManager.isUltimaOndaFinalizada()) {
@@ -236,7 +273,7 @@ public class GamePanel extends JPanel implements Runnable {
             } else {
                 estadoDoJogo = ESTADO_PREPARACAO;
                 proximaOndaTimer = System.nanoTime() + tempoEntreOndas;
-                dinheiro += 150; // Recompensa por terminar a onda
+                dinheiro += 150;
             }
         }
     }
@@ -245,7 +282,6 @@ public class GamePanel extends JPanel implements Runnable {
         Point pontoInicial = tileManager.getCaminho().getFirst();
         Inimigo novoInimigo = null;
 
-        // --- FÁBRICA DE INIMIGOS SIMPLIFICADA ---
         switch (tipo) {
             case Wave.TIPO_BASICO:
                 novoInimigo = new InimigoBasico(pontoInicial.x, pontoInicial.y, tileManager.getCaminho());
@@ -310,6 +346,35 @@ public class GamePanel extends JPanel implements Runnable {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
+        // --- DESENHO DO MENU ---
+        if (estadoDoJogo == ESTADO_MENU) {
+            if (menuImagem != null) {
+                // Desenha a imagem preenchendo a tela toda
+                g2.drawImage(menuImagem, 0, 0, larguraTela, alturaTela, null);
+            } else {
+                // Se não achar a imagem, pinta de azul
+                g2.setColor(new Color(0, 20, 60));
+                g2.fillRect(0, 0, larguraTela, alturaTela);
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Arial", Font.BOLD, 50));
+                g2.drawString("TUBARÕES VS ORCAS", larguraTela/2 - 250, alturaTela/2);
+            }
+            
+            // Texto Piscando "PRESS ENTER"
+            if ((System.currentTimeMillis() / 500) % 2 == 0) {
+                g2.setColor(Color.WHITE);
+                g2.setFont(new Font("Arial", Font.BOLD, 30));
+                String msg = "PRESS ENTER TO START";
+                int larg = g2.getFontMetrics().stringWidth(msg);
+                g2.drawString(msg, (larguraTela - larg) / 2, alturaTela - 100);
+            }
+            
+            g2.dispose();
+            return;
+        }
+
+        // --- DESENHO DO JOGO NORMAL ---
+
         tileManager.draw(g2);
         for (Torre torre : torres) torre.draw(g2);
         for (Projetil projetil : projeteis) projetil.draw(g2);
@@ -331,17 +396,37 @@ public class GamePanel extends JPanel implements Runnable {
         g2.dispose();
     }
 
+    // --- MÉTODOS DO TECLADO (DETECTA O ENTER) ---
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int code = e.getKeyCode();
+
+        // Se apertar ENTER na tela de MENU, começa o jogo
+        if (estadoDoJogo == ESTADO_MENU) {
+            if (code == KeyEvent.VK_ENTER) {
+                estadoDoJogo = ESTADO_PREPARACAO;
+                // Reseta o timer da primeira onda para dar tempo de se preparar
+                proximaOndaTimer = System.nanoTime() + tempoEntreOndas; 
+            }
+        }
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+
+    // --- HUD (Sem alterações) ---
     private void drawHUD(Graphics2D g2) {
         g2.setFont(new Font("Arial", Font.BOLD, 24));
         g2.setColor(Color.WHITE);
         g2.drawString("Vida: " + vidaBase, 20, 30);
         g2.drawString("Dinheiro: $" + dinheiro, 20, 60);
 
-        // Atualizado para pegar a onda do WaveManager
         int ondaAtual = waveManager.getOndaAtualNumero();
         int totalOndas = waveManager.getTotalOndas();
 
-        // Se já acabou, mostra a última
         if (ondaAtual > totalOndas) ondaAtual = totalOndas;
 
         g2.drawString("Onda: " + ondaAtual + " / " + totalOndas, larguraTela - 180, 30);
