@@ -19,7 +19,7 @@ cd seu-repositorio
 
 No terminal, dentro da pasta onde estão os arquivos .java, rode:
 ```bash
-javac Main.java GamePanel.java TileManager.java Inimigo.java
+javac Main.java GamePanel.java TileManager.java Inimigo.java e todos os outros arquivos...
 ```
 4. Executar o jogo
 
