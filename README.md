@@ -163,297 +163,290 @@ Este design demonstra uma arquitetura bem pensada que equilibra complexidade de 
 
 ```mermaid
 classDiagram
-    direction TB
-    
-    %% ========== ENUMS ==========
+    %% --- ENUMS ---
     class Elemento {
         <<enumeration>>
         AGUA
         FOGO
         ALGA
         NEUTRO
-        +getModificador(Elemento atacante, Elemento defensor) double
+        -double MOD_FORTE$
+        -double MOD_FRACO$
+        -double MOD_NORMAL$
+        +getModificador(Elemento, Elemento) double$
     }
 
-    %% ========== ENTITY CLASSES ==========
-    class Torre {
-        <<abstract>>
-        #int x, y
-        #int col, row
-        #int tamanho
-        #int custo
-        #int alcance
-        #long ultimoDisparo
-        #long cadenciaDeTiro
-        #Inimigo alvo
-        #List~Inimigo~ inimigos
-        #List~Projetil~ projeteis
-        #Elemento elemento
-        #int nivel
-        #int custoUpgrade
-        #int danoBase
-        +update() void
-        +especializar(Elemento) void
-        +getCusto() int
-        +getCol() int
-        +getRow() int
-        +getElemento() Elemento
-        +getNivel() int
-        +getCustoUpgrade() int
-        +isEspecializada() boolean
-        +getX() int
-        +getY() int
-        +getAlcance() int
-        <<abstract>>
-        #atirar() void
-        <<abstract>>
-        +draw(Graphics2D) void
-    }
-
-    class TorreCanhao {
-        +CUSTO: int = 100
-        +TorreCanhao(int, int, int, List~Inimigo~, List~Projetil~)
-        #atirar() void
-        +draw(Graphics2D) void
-    }
-
-    class TorreLaser {
-        +CUSTO: int = 180
-        +TorreLaser(int, int, int, List~Inimigo~, List~Projetil~)
-        #atirar() void
-        +draw(Graphics2D) void
-    }
-
-    class TorreEspada {
-        +CUSTO: int = 70
-        +TorreEspada(int, int, int, List~Inimigo~, List~Projetil~)
-        #atirar() void
-        +draw(Graphics2D) void
-    }
-
-    class Inimigo {
-        <<abstract>>
-        #float x, y
-        #int vida
-        #int vidaMaxima
-        #float velocidade
-        #boolean ativo
-        #int recompensa
-        #int largura, altura
-        #List~Point~ caminho
-        #int pontoAlvoIndex
-        #Elemento elemento
-        #float originalVelocidade
-        #long slowEffectEndTime
-        #long burnEffectEndTime
-        #int burnDamagePerTick
-        #long lastBurnTickTime
-        #boolean isMolhado
-        +update() void
-        +draw(Graphics2D) void
-        +levarDano(int, Elemento) void
-        +getRecompensa() int
-        +chegouNaBase() boolean
-        +desativar() void
-        +isAtivo() boolean
-        +getX() float
-        +getY() float
-        +getLargura() int
-        +getAltura() int
-        <<abstract>>
-        +drawInimigo(Graphics2D) void
-    }
-
-    class InimigoBasico {
-        +InimigoBasico(float, float, List~Point~)
-        +drawInimigo(Graphics2D) void
-        -vidaMaxima: int = 200
-        -velocidade: float = 1.5f
-        -recompensa: int = 10
-        -largura: int = 32
-        -altura: int = 32
-        -elemento: Elemento = FOGO
-    }
-
-    class InimigoRapido {
-        +InimigoRapido(float, float, List~Point~)
-        +drawInimigo(Graphics2D) void
-        -vidaMaxima: int = 100
-        -velocidade: float = 3.0f
-        -recompensa: int = 5
-        -largura: int = 24
-        -altura: int = 24
-        -elemento: Elemento = ALGA
-    }
-
-    class InimigoTank {
-        +InimigoTank(float, float, List~Point~)
-        +drawInimigo(Graphics2D) void
-        -vidaMaxima: int = 1000
-        -velocidade: float = 0.8f
-        -recompensa: int = 25
-        -largura: int = 40
-        -altura: int = 40
-        -elemento: Elemento = AGUA
-    }
-
-    class Projetil {
-        -float x, y
-        -float velocidade
-        -int dano
-        -Inimigo alvo
-        -boolean ativo
-        -Color cor
-        -Elemento elemento
-        +Projetil(float, float, float, int, Inimigo, Color, Elemento)
-        +update() void
-        +draw(Graphics2D) void
-        +desativar() void
-        +isAtivo() boolean
-    }
-
-    %% ========== GAME MANAGEMENT ==========
+    %% --- CORE ENGINE ---
     class GamePanel {
-        -Thread gameThread
+        -int screenWidth
+        -int screenHeight
+        -int tileSize
+        -int FPS
+        -int gameState
+        -int moedas
+        -int vidaBase
         -TileManager tileManager
         -WaveManager waveManager
-        -List~Inimigo~ inimigos
-        -List~Torre~ torres
-        -List~Projetil~ projeteis
-        -int vidaBase
-        -int dinheiro
-        -int estadoDoJogo
-        -long tempoEntreOndas
-        -long proximaOndaTimer
-        -Point mousePos
-        -int tipoTorreSelecionada
-        -Torre torreSelecionada
-        -int alturaHUD
-        -Rectangle boxTorreCanhao, boxTorreLaser, boxTorreEspada
-        -Rectangle boxUpgradeOpcao1, boxUpgradeOpcao2, boxUpgradeOpcao3
-        +GamePanel()
-        +startGameThread() void
-        +run() void
-        +update() void
-        +paintComponent(Graphics) void
-        -spawnInimigo(int) void
-        -construirTorre(int, int) void
-        -venderTorre(int, int) void
-        -getTorreNoLocal(int, int) Torre
-        -existeTorreNoLocal(int, int) boolean
-        -drawHUD(Graphics2D) void
-        -drawTorreSelectionHUD(Graphics2D) void
-        -drawUpgradeHUD(Graphics2D) void
-        -drawPlacementGhost(Graphics2D) void
-        -drawTorreRange(Graphics2D, Torre) void
-        -drawTelaFimDeJogo(Graphics2D) void
-        -drawTelaVitoria(Graphics2D) void
-    }
-
-    class WaveManager {
-        -List~Wave~ waves
-        -int ondaAtualIndex
-        -int inimigoAtualIndex
-        -long ultimoSpawnTime
-        -long spawnCooldown
-        +WaveManager()
-        +getProximoInimigoParaSpawnar() int
-        +isOndaCompletaDeSpawnar() boolean
-        +proximaOnda() void
-        +getOndaAtualNumero() int
-        +getTotalOndas() int
-        +isUltimaOndaFinalizada() boolean
-        -criarOndas() void
-    }
-
-    class Wave {
-        -List~Integer~ listaInimigos
-        +TIPO_BASICO: int = 0
-        +TIPO_RAPIDO: int = 1
-        +TIPO_TANK: int = 2
-        +Wave()
-        +adicionarInimigo(int, int) void
-        +getListaInimigos() List~Integer~
-    }
-
-    class TileManager {
-        -int tamanhoDoTitulo
-        -int maxColunas
-        -int maxLinhas
-        -int[][] mapGrid
-        -List~Point~ caminho
-        +TileManager(int, int, int)
-        +draw(Graphics2D) void
-        +isTileValidoParaConstrucao(int, int) boolean
-        +getCaminho() List~Point~
-        -criarMapaFixo() void
-        -desenharSegmento(int, int, int, int) void
+        -ArrayList~Inimigo~ inimigos
+        -ArrayList~Torre~ torres
+        -ArrayList~Projetil~ projeteis
+        -MouseInput mouseInput
+        +startGame()
+        +update()
+        +paintComponent(Graphics)
+        +tryBuildTower(int, int)
+        +upgradeTower(Torre, Elemento)
     }
 
     class Main {
-        +main(String[] args) void
+        +main(String[])
     }
 
-    %% ========== RELATIONSHIPS ==========
+    class TileManager {
+        -int[][] mapGrid
+        -int mapWidth
+        -int mapHeight
+        -int tileSize
+        -List~Point~ caminho
+        -BufferedImage[] tileImages
+        +draw(Graphics2D)
+        +getMapGrid() int[][]
+        +getCaminho() List~Point~
+    }
+
+    %% --- WAVE SYSTEM ---
+    class WaveManager {
+        -ArrayList~Wave~ waves
+        -float timeSinceLastSpawn
+        -float spawnInterval
+        -int currentWaveIndex
+        -int enemiesSpawnedInCurrentWave
+        -boolean isWaveActive
+        +loadWaves()
+        +update()
+        -spawnEnemy(int)
+    }
+
+    class Wave {
+        -int[] enemyTypes
+        -int[] enemyCounts
+        +getEnemyType(int) int
+        +getEnemyCount(int) int
+        +getTotalEnemies() int
+    }
+
+    %% --- ENTIDADES: TORRES ---
+    class Torre {
+        <<abstract>>
+        #int x
+        #int y
+        #int col
+        #int row
+        #int tamanho
+        #int custo
+        #int alcance
+        #int danoBase
+        #long cadenciaDeTiro
+        #long ultimoDisparo
+        #int nivel
+        #int custoUpgrade
+        #Elemento elemento
+        #Inimigo alvo
+        +update()
+        +draw(Graphics2D)*
+        +especializar(Elemento)
+        +startUpgrade(int)*
+        #atirar()*
+    }
+
+    class TorreCanhao {
+        +int CUSTO$
+        -AnimatedSprite baseSprite
+        -AnimatedSprite evolveSprite
+        -AnimatedSprite finalSprite
+        -boolean upgrading
+        -int pendingLevel
+        +atirar()
+        +draw(Graphics2D)
+    }
+
+    class TorreLaser {
+        +int CUSTO$
+        -AnimatedSprite baseSprite
+        -AnimatedSprite evolveSprite
+        -AnimatedSprite finalSprite
+        +atirar()
+        +draw(Graphics2D)
+    }
+
+    class TorreEspada {
+        +int CUSTO$
+        -AnimatedSprite baseSprite
+        -AnimatedSprite evolveSprite
+        -AnimatedSprite finalSprite
+        +atirar()
+        +draw(Graphics2D)
+    }
+
+    %% --- ENTIDADES: INIMIGOS ---
+    class Inimigo {
+        <<abstract>>
+        #float x
+        #float y
+        #int vida
+        #int vidaMaxima
+        #float velocidade
+        #float originalVelocidade
+        #int recompensa
+        #boolean ativo
+        #List~Point~ caminho
+        #int pontoAlvoIndex
+        #Elemento elemento
+        %% Status Effects
+        -long slowEffectEndTime
+        -long burnEffectEndTime
+        -int burnDamagePerTick
+        -boolean isMolhado
+        +update()
+        +draw(Graphics2D)
+        +levarDano(int, Elemento)
+        #drawInimigo(Graphics2D)*
+    }
+
+    class InimigoBasico {
+        -AnimatedSprite sprite
+        +drawInimigo(Graphics2D)
+    }
+
+    class InimigoRapido {
+        -AnimatedSprite sprite
+        +drawInimigo(Graphics2D)
+    }
+
+    class InimigoTank {
+        -AnimatedSprite sprite
+        +drawInimigo(Graphics2D)
+    }
+
+    %% --- PROJETEIS ---
+    class Projetil {
+        -float x
+        -float y
+        -float velocidade
+        -int dano
+        -Color cor
+        -boolean ativo
+        -Inimigo alvo
+        -Elemento elemento
+        +update()
+        +draw(Graphics2D)
+    }
+
+    %% --- SISTEMA GRÁFICO ---
+    class Animation {
+        -BufferedImage[] frames
+        -int currentFrame
+        -long startTime
+        -long delay
+        +update()
+        +getImage() BufferedImage
+    }
+
+    class AnimatedSprite {
+        -Animation animation
+        -int x
+        -int y
+        +update(long)
+        +render(Graphics2D, int, int)
+    }
+
+    class SpriteSheet {
+        -BufferedImage sheet
+        +getSprites(int) BufferedImage[]
+    }
+
+    %% --- RELACIONAMENTOS ---
+    Main ..> GamePanel : Instancia
+    GamePanel *-- TileManager : Gerencia
+    GamePanel *-- WaveManager : Gerencia
+    GamePanel o-- Torre : Lista de
+    GamePanel o-- Inimigo : Lista de
+    GamePanel o-- Projetil : Lista de
+
+    WaveManager o-- Wave : Lista de
+    WaveManager ..> Inimigo : Instancia (Factory)
+
     Torre <|-- TorreCanhao
     Torre <|-- TorreLaser
     Torre <|-- TorreEspada
-    
+    Torre --> Elemento : Tem
+    Torre ..> Projetil : Cria
+
     Inimigo <|-- InimigoBasico
     Inimigo <|-- InimigoRapido
     Inimigo <|-- InimigoTank
+    Inimigo --> Elemento : Tem
 
-    GamePanel "1" *-- "1" TileManager
-    GamePanel "1" *-- "1" WaveManager
-    GamePanel "1" *-- "*" Inimigo
-    GamePanel "1" *-- "*" Torre
-    GamePanel "1" *-- "*" Projetil
-    
-    WaveManager "1" *-- "*" Wave
-    
-    Torre "1" *-- "*" Inimigo : targets
-    Torre "1" *-- "*" Projetil : shoots
-    Torre "1" *-- "1" Elemento : has
-    
-    Inimigo "1" *-- "1" Elemento : has
-    Inimigo "1" *-- "*" Point : follows path
-    
-    Projetil "1" *-- "1" Inimigo : targets
-    Projetil "1" *-- "1" Elemento : has
-    
-    Wave "1" *-- "*" Integer : contains enemy types
+    Projetil --> Inimigo : Alvo
+    Projetil --> Elemento : Tem
+
+    TorreCanhao *-- AnimatedSprite
+    InimigoBasico *-- AnimatedSprite
+    AnimatedSprite *-- Animation
+    Animation ..> SpriteSheet
+
 ```
-
-## 🎯 Legenda do Diagrama
-
-- **🔷 Classes Abstratas**: `Torre`, `Inimigo` (métodos e atributos compartilhados)
-- **🔶 Classes Concretas**: Especializações com stats específicos
-- **📦 Enumerações**: `Elemento` com sistema de combate triádico
-- **🔗 Composição**: Relação "tem-um" (losango preto)
-- **🔄 Herança**: Relação "é-um" (seta oca)
 
 ## 🏗️ Estrutura do Projeto
 
 ```
-src/
-├── main/
-│   └── Main.java                 # Ponto de entrada
-├── game/
-│   ├── GamePanel.java           # Loop principal e UI (60 FPS)
-│   ├── Elemento.java            # Sistema elemental (Fogo > Alga > Água > Fogo)
-│   ├── WaveManager.java         # Gerenciador de 10 ondas progressivas
-│   └── Wave.java                # Configuração de ondas com tipos de inimigos
-├── entity/
-│   ├── Torre.java               # Classe base com targeting e upgrade system
-│   ├── TorreCanhao.java         # Torre balanceada (alcance médio, dano médio)
-│   ├── TorreLaser.java          # Torre de alto dano (cadência lenta)
-│   ├── TorreEspada.java         # Torre rápida (dano baixo, ataque rápido)
-│   ├── Inimigo.java             # Classe base com sistema de status effects
-│   ├── InimigoBasico.java       # Inimigo básico (elemento Fogo)
-│   ├── InimigoRapido.java       # Inimigo rápido (elemento Alga)  
-│   ├── InimigoTank.java         # Inimigo tanque (elemento Água)
-│   └── Projetil.java            # Projéteis com homing e sistema elemental
-└── map/
-    └── TileManager.java          # Mapa fixo com caminho pré-definido
+flowchart TD
+    subgraph main [src/main/]
+        M1[Main.java | Ponto de entrada da aplicação]
+    end
+
+    subgraph game [src/game/]
+        G1[GamePanel.java | Loop principal e Controlador (60 FPS)]
+        G2[Elemento.java | Sistema elemental (Fogo > Alga > Água > Fogo)]
+        G3[WaveManager.java | Gerenciador de ondas e spawn de inimigos]
+        G4[Wave.java | Configuração de tipos e quantidades por onda]
+    end
+
+    subgraph entity [src/entity/]
+        E1[Torre.java | Classe base com targeting e upgrade system]
+        E2[TorreCanhao.java | Tipo: Balanceada (Alcance/Dano Médios)]
+        E3[TorreLaser.java | Tipo: Alto Dano (Cadência Lenta)]
+        E4[TorreEspada.java | Tipo: Rápida (Cadência Alta, Dano Baixo)]
+        E5[Inimigo.java | Classe base com sistema de status effects (Molhado/Queimadura/Lentidão)]
+        E6[InimigoBasico.java | Tipo: Básico (Elemento Fogo)]
+        E7[InimigoRapido.java | Tipo: Rápido (Elemento Alga)]
+        E8[InimigoTank.java | Tipo: Tank (Elemento Água)]
+        E9[Projetil.java | Projéteis com mira (homing) e elemento de ataque]
+    end
+
+    subgraph map [src/map/]
+        P1[TileManager.java | Mapa fixo com caminho pré-definido (Gerencia tiles)]
+    end
+    
+    subgraph sprites [src/sprites/]
+        R1[SpriteSheet.java | Utilitário para cortar imagens em frames]
+        R2[Animation.java | Lógica de avanço de frames baseada no tempo]
+        R3[AnimatedSprite.java | Wrapper de animação para entidades (Torre/Inimigo)]
+        R4[AnimatedTile.java | Otimização de animação para tiles de mapa (Água)]
+    end
+    
+    % Conexões representando o fluxo de dependência central
+    M1 --> G1
+    G1 --> G3
+    G1 --> P1
+    G1 --> E1
+    G1 --> E5
+    G3 --> G4
+    E1 --> E5 & E9
+    E5 --> G2
+    E9 --> G2
+    R3 --> R2
+    R4 --> R3
+    R2 --> R1
 ```
 
